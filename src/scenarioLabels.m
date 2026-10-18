@@ -1,16 +1,13 @@
 function [keys, labels, short, cols] = scenarioLabels()
-%SCENARIOLABELS  Names and colours used for the scenarios in every case.
-    keys   = {'actual','tecpro','sled','rams','nocam','smart','failed'};
-    labels = {'Actual barrier (real day)', 'Standard TecPro', ...
-              'Option 1: sled only (20 cm)', 'Option 2: rams only (0 cm)', ...
-              'Option 3: rams + sled, no camera', 'Option 4: COMPLETE (rams + sled + camera)', ...
-              'Complete system FAILED (offline)'};
-    short  = {'Actual','TecPro','Sled','Rams','Rams+Sled','Complete','Failed'};
-    cols   = [0.35 0.35 0.35;   % actual
+%SCENARIOLABELS  Names and colours of the four cases used in every crash study.
+    keys   = {'real','tecpro','small','large'};
+    labels = {'Case 1: Real condition (actual barrier)', ...
+              'Case 2: Standard TecPro', ...
+              'Case 3: Complete system, small space (+20 cm)', ...
+              'Case 4: Complete system, large space (~2.6 m)'};
+    short  = {'Real','TecPro','Small','Large'};
+    cols   = [0.35 0.35 0.35;   % real
               0.90 0.30 0.20;   % tecpro
-              0.10 0.55 0.90;   % sled
-              0.95 0.65 0.10;   % rams
-              0.55 0.35 0.80;   % rams+sled no camera
-              0.20 0.70 0.35;   % complete
-              0.60 0.60 0.60];  % failed
+              0.20 0.70 0.35;   % complete, small space
+              0.10 0.45 0.85];  % complete, large space
 end

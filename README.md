@@ -11,7 +11,8 @@ circuits, tested against 10 real crashes (3 of them fatal).
 | Part | What it does | Extra depth |
 |------|--------------|-------------|
 | **Parallel hydraulic rams** | Sit between the TecPro stacks, flush with the face. Add force while the foam is still soft, so the push on the car is flat instead of rising. | 0 cm |
-| **Force-limiting sled** | The barrier module sits on a sled that stays locked until the force reaches the target, then slides back up to 20 cm. Stops the force rising at the end. | 20 cm |
+| **Force-limiting sled** | The barrier module sits on a sled that stays locked until the force reaches the target, then slides back (20 cm in Case 3, 2.5 m in Case 4). Stops the force rising at the end. | 20 cm / 2.5 m |
+| **Pre-retraction** (Case 4 only) | When there is room, the camera's prediction starts moving the sled back before contact, so the car meets a barrier already moving away. | — |
 | **Camera + ML prediction** | Predicts impact speed before contact, so the controller can set the lowest flat force that still stops the car. On-board sensors correct it every 1 ms after contact. | — |
 | **Fail-safe** | If offline: ram valves open (no force), sled locked → behaves exactly like TecPro. | — |
 
@@ -34,18 +35,16 @@ run('cases/Case01_Senna_Imola1994.m')
 Each case adds `src/` to the path itself and saves figures and CSV tables
 to `results/caseXX/`.
 
-## Every case compares
-**Baselines**
-- **Actual** – the barrier that was really there that day
-- **TecPro** – a standard TecPro barrier in the same place
+## Every crash is simulated in four cases
+1. **Real condition** – the barrier that was actually there that day
+2. **TecPro** – a standard TecPro barrier in the same place
+3. **Complete system, small space** – TecPro unchanged + parallel rams +
+   20 cm sled + camera
+4. **Complete system, large space** – TecPro unchanged + rams + 2.5 m sled +
+   camera-triggered pre-retraction (~2.6 m car travel)
 
-**Our system – four options** (TecPro always unchanged)
-1. **Sled only** – 20 cm force-limiting sled
-2. **Rams only** – parallel hydraulic rams, 0 cm extra
-3. **Rams + sled, no camera** – on-board sensors only
-4. **Complete system** – rams + sled + camera prediction
-
-**Fail-safe check** – complete system offline (must equal TecPro)
+A **fail-safe check** (Case 3 with the system offline must equal TecPro) is
+run alongside every case.
 
 …under seven external conditions (dry, light rain, heavy rain, cold, hot,
 sun glare, worst case) and across a range of impact angles when the angle

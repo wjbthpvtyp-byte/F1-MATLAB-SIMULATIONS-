@@ -32,6 +32,19 @@ function r = simulateCrash(mode, v0, car, C, P)
     end
     tNext = P.t_sense;                            % first on-board measurement
 
+    % ---------- camera-triggered PRE-RETRACTION (large-space version) ----
+    % The hydraulics start moving the sled backward just before contact,
+    % so the car meets a barrier that is already moving away from it.
+    pre = useSled && active && P.cameraOK && P.v_pre > 0;
+    if pre
+        tr = P.v_pre/P.a_pre;                     % time to reach retraction speed
+        tp = -tr - 0.005;  xc = v0*tp;            % car position when retraction starts
+        while tp < 0
+            if tp >= -tr && vb < P.v_pre, vb = min(P.v_pre, vb + P.a_pre*dt); end
+            xb = xb + vb*dt;  xc = xc + vc*dt;  tp = tp + dt;
+        end
+    end
+
     n = 0;
     while tt < P.tend && n < N
         % ---------- barrier + car crush -----------------------------------
@@ -68,12 +81,19 @@ function r = simulateCrash(mode, v0, car, C, P)
 
         % ---------- (B) force-limiting sled ------------------------------
         if useSled
-            Fs  = Ft*(mc + ms)/mc;                % Inf -> stays locked
+            Fs  = Ft*(mc + ms)/mc;                % valve force; Inf -> stays locked
+            if vb > 0 && vb < vc - P.vlock
+                Fs = 0;                           % let the sled catch up with the car
+            end
             Fst = 0; if xb > P.S, Fst = P.kstop*(xb - P.S); end
-            if vb <= 0 && F <= Fs && Fst == 0
-                vb = 0;
+            if pre && d <= 0 && vb > 0
+                xb = xb + vb*dt;                  % actuator holds retraction speed until contact
+            elseif vb <= 0 && F <= Fs && Fst == 0
+                vb = 0;                           % sled locked
             else
-                vb = vb + (F - Fs - P.cs*vb - Fst)/ms*dt;
+                % damping acts on sled speed RELATIVE to the car, so it only
+                % stops the sled running ahead of (or lagging) the car
+                vb = vb + (F - Fs - P.cs*(vb - vc) - Fst)/ms*dt;
                 if vb < 0, vb = 0; end
                 xb = xb + vb*dt;
             end

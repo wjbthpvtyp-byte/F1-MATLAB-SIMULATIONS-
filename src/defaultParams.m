@@ -21,6 +21,13 @@ function P = defaultParams()
     P.ms    = 100;       % moving mass (sled + TecPro + rams) [kg]
     P.cs    = 5e3;       % viscous resistance of sled valve [N s/m]
     P.kstop = 1e8;       % sled end-stop stiffness [N/m]
+    P.vlock = 1.5;       % sled slides freely until within this speed of the car [m/s]
+    P.v_pre = 0;         % camera-triggered pre-retraction speed [m/s] (0 = off)
+    P.a_pre = 10*9.81;   % pre-retraction acceleration [m/s^2]
+
+    % --- Case 4: complete system WITH large space (first concept) --------
+    P.S_large     = 2.5; % sled stroke [m] -> ~2.6 m car travel
+    P.v_pre_large = 6;   % pre-retraction speed when there is room for it [m/s]
 
     % --- smart barrier: (C) controller + camera ---------------------------
     P.Fmin      = 80e3;  % lowest target force [N]

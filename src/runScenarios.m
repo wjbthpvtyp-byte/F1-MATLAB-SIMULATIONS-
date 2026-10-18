@@ -1,17 +1,15 @@
 function [R, M, info] = runScenarios(crash, car, cond, angleDeg, P)
-%RUNSCENARIOS  Every barrier option compared in each case study.
+%RUNSCENARIOS  The four cases compared for every crash.
 %
-%   BASELINES
-%     actual  - the barrier that was really there that day
-%     tecpro  - a standard TecPro barrier in the same place
-%   OUR SYSTEM - FOUR OPTIONS (TecPro always unchanged)
-%     sled    - option 1: TecPro + 20 cm force-limiting sled
-%     rams    - option 2: TecPro + parallel hydraulic rams (0 cm extra)
-%     nocam   - option 3: rams + sled, NO camera (on-board sensors only)
-%     smart   - option 4: COMPLETE system: rams + sled + camera prediction
-%   FAIL-SAFE CHECK
-%     failed  - complete system with hydraulics/electronics offline
-%               (rams fail open, sled locked) -> must equal TecPro
+%   CASE 1  real    - REAL CONDITION: the barrier that was actually there
+%   CASE 2  tecpro  - standard TecPro barrier in the same place
+%   CASE 3  small   - COMPLETE SYSTEM, SMALL SPACE (TecPro unchanged,
+%                     parallel rams + 20 cm sled + camera)
+%   CASE 4  large   - COMPLETE SYSTEM, LARGE SPACE (TecPro unchanged,
+%                     rams + 2.5 m sled + camera pre-retraction, ~2.6 m travel)
+%
+%   Fail-safe check (not a case): Case 3 with the system offline must give
+%   exactly the TecPro result. Returned as R.failsafe / M.failsafe.
 %
 %   crash : case data (see cases/*.m)    car : carModel.m
 %   cond  : weatherScenario.m            angleDeg : impact angle [deg]
@@ -19,21 +17,19 @@ function [R, M, info] = runScenarios(crash, car, cond, angleDeg, P)
     [Pc, vImp_kmh] = applyConditions(P, cond, crash);
     vN = vImp_kmh/3.6 * sind(angleDeg);           % normal component [m/s]
 
-    bActual = barrierModel(crash.barrierType, cond.foamScale);
+    bReal   = barrierModel(crash.barrierType, cond.foamScale);
     bTecPro = barrierModel('tecpro',          cond.foamScale);
-    Cact = buildContact(car, bActual);
-    Ctec = buildContact(car, bTecPro);
+    Creal = buildContact(car, bReal);
+    Ctec  = buildContact(car, bTecPro);
 
-    Pnc  = Pc;  Pnc.cameraOK      = false;        % option 3: no camera
-    Poff = Pc;  Poff.systemOnline = false;        % fail-safe test
+    Plarge = Pc;  Plarge.S = P.S_large;  Plarge.v_pre = P.v_pre_large;
+    Poff   = Pc;  Poff.systemOnline = false;
 
-    R.actual = simulateCrash('passive', vN, car, Cact, Pc);
-    R.tecpro = simulateCrash('passive', vN, car, Ctec, Pc);
-    R.sled   = simulateCrash('sled',    vN, car, Ctec, Pc);
-    R.rams   = simulateCrash('rams',    vN, car, Ctec, Pc);
-    R.nocam  = simulateCrash('smart',   vN, car, Ctec, Pnc);
-    R.smart  = simulateCrash('smart',   vN, car, Ctec, Pc);
-    R.failed = simulateCrash('smart',   vN, car, Ctec, Poff);
+    R.real     = simulateCrash('passive', vN, car, Creal, Pc);
+    R.tecpro   = simulateCrash('passive', vN, car, Ctec,  Pc);
+    R.small    = simulateCrash('smart',   vN, car, Ctec,  Pc);
+    R.large    = simulateCrash('smart',   vN, car, Ctec,  Plarge);
+    R.failsafe = simulateCrash('smart',   vN, car, Ctec,  Poff);
 
     f = fieldnames(R);
     for k = 1:numel(f), M.(f{k}) = crashMetrics(R.(f{k}), Pc); end
@@ -42,6 +38,7 @@ function [R, M, info] = runScenarios(crash, car, cond, angleDeg, P)
     info.vNormal     = vN;
     info.KE_kJ       = 0.5*car.mass*vN^2/1e3;
     info.angle       = angleDeg;
-    info.barrierName = bActual.name;
+    info.barrierName = bReal.name;
     info.cond        = cond;
+    info.failsafeOK  = abs(M.failsafe.clip3 - M.tecpro.clip3) < 0.1;
 end
