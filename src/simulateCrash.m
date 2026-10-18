@@ -28,7 +28,8 @@ function r = simulateCrash(mode, v0, car, C, P)
     Ft = Inf;                                     % Inf = no target set
     if active && P.cameraOK                       % camera prediction before contact
         vEst = v0*(1 + P.v_err);
-        Ft = solveTarget(0.5*mc*vEst^2, 0, P.S*useSled, useRams, useSled, C, P);
+        Ft = solveTarget(0.5*mc*vEst^2, 0, max(P.S - P.S_reserve, 0)*useSled, ...
+                         useRams, useSled, C, P);
     end
     tNext = P.t_sense;                            % first on-board measurement
 
@@ -45,6 +46,7 @@ function r = simulateCrash(mode, v0, car, C, P)
         end
     end
 
+    stopped = false;                              % becomes true when the car has stopped
     n = 0;
     while tt < P.tend && n < N
         % ---------- barrier + car crush -----------------------------------
@@ -64,24 +66,36 @@ function r = simulateCrash(mode, v0, car, C, P)
         if active && tt >= tNext
             tNext = tNext + P.t_upd;
             if vc > 0.5
-                Ft = solveTarget(0.5*mc*vc^2, max(d,0), max(P.S - xb,0)*useSled, ...
+                Ft = solveTarget(0.5*mc*vc^2, max(d,0), max(P.S - P.S_reserve - xb,0)*useSled, ...
                                  useRams, useSled, C, P);
             end
+        end
+
+        % ---------- REBOUND LOCK: the car has stopped ----------------------
+        % Rams release and the sled valve drops to a small hold force, so the
+        % springing-back foam pushes the light sled backward (into the reserve
+        % stroke) instead of pushing the car back toward the track.
+        if active && P.reboundLock && ~stopped && vc <= 0
+            stopped = true;
         end
 
         % ---------- (A) parallel rams -----------------------------------
         if useRams
             cmd = 0;
-            if isfinite(Ft) && d > 0 && vc > 0 && d < P.ram_stroke
+            if isfinite(Ft) && d > 0 && vc > 0 && ~stopped && d < P.ram_stroke
                 cmd = min(max(Ft - Ff, 0), P.Fram_max);
             end
             Fr = Fr + (cmd - Fr)*dt/P.tau;        % valve lag
+            if vc - vb <= 0
+                Fr = 0;                           % a damper resists compression only;
+            end                                   % it cannot push the car back out
         end
         F = Ff + Fr;
 
         % ---------- (B) force-limiting sled ------------------------------
         if useSled
             Fs  = Ft*(mc + ms)/mc;                % valve force; Inf -> stays locked
+            if stopped, Fs = P.F_release; end     % rebound lock: let the sled give way
             if vb > 0 && vb < vc - P.vlock
                 Fs = 0;                           % let the sled catch up with the car
             end

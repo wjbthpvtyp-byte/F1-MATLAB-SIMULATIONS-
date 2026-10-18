@@ -14,6 +14,7 @@ circuits, tested against 10 real crashes (3 of them fatal).
 | **Force-limiting sled** | The barrier module sits on a sled that stays locked until the force reaches the target, then slides back (20 cm in Case 3, 2.5 m in Case 4). Stops the force rising at the end. | 20 cm / 2.5 m |
 | **Pre-retraction** (Case 4 only) | When there is room, the camera's prediction starts moving the sled back before contact, so the car meets a barrier already moving away. | — |
 | **Camera + ML prediction** | Predicts impact speed before contact, so the controller can set the lowest flat force that still stops the car. On-board sensors correct it every 1 ms after contact. | — |
+| **Rebound lock** | When the car stops, the rams release and the sled gives way into a 2 cm reserve, so the springing-back foam pushes the sled instead of the car back onto the track. | (2 cm of the sled stroke) |
 | **Fail-safe** | If offline: ram valves open (no force), sled locked → behaves exactly like TecPro. | — |
 
 ## Repository layout
@@ -35,6 +36,10 @@ run('cases/Case01_Senna_Imola1994.m')
 Each case adds `src/` to the path itself and saves figures and CSV tables
 to `results/caseXX/`.
 
+**MATLAB Online / single file:** every case also exists as one self-contained
+file in `standalone/` (case + whole engine). Regenerate them after changing
+`src/` with `python3 tools/build_standalone.py`.
+
 ## Every crash is simulated in four cases
 1. **Real condition** – the barrier that was actually there that day
 2. **TecPro** – a standard TecPro barrier in the same place
@@ -43,8 +48,9 @@ to `results/caseXX/`.
 4. **Complete system, large space** – TecPro unchanged + rams + 2.5 m sled +
    camera-triggered pre-retraction (~2.6 m car travel)
 
-A **fail-safe check** (Case 3 with the system offline must equal TecPro) is
-run alongside every case.
+A **fail-safe check** (Case 3 with the system offline must equal TecPro) and
+the **theoretical best** (lowest g physically possible with TecPro unchanged,
+for each space) are reported alongside every case, together with rebound speed.
 
 …under seven external conditions (dry, light rain, heavy rain, cold, hot,
 sun glare, worst case) and across a range of impact angles when the angle
@@ -54,7 +60,7 @@ was not published.
 | # | Crash | Barrier | Fatal | Script |
 |---|-------|---------|-------|--------|
 | 1 | Ayrton Senna, Imola 1994 | Concrete | Yes | `Case01_Senna_Imola1994.m` ✅ |
-| 2 | Roland Ratzenberger, Imola 1994 | Concrete | Yes | planned |
+| 2 | Roland Ratzenberger, Imola 1994 | Concrete | Yes | `Case02_Ratzenberger_Imola1994.m` ✅ |
 | 3 | Anthoine Hubert, Spa 2019 (F2) | Barrier + secondary impact | Yes | planned |
 | 4 | Romain Grosjean, Bahrain 2020 | Armco | No | planned |
 | 5 | Robert Kubica, Canada 2007 | Concrete | No | planned |

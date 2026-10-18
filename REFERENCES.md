@@ -24,6 +24,8 @@ one number.
 | S13 | AtlasF1, *The FIA's conclusions on Schumacher's accident* (1999) — https://archive.atlasf1.com/news/1999/1438.htm | M. Schumacher 306 → 107 km/h, tyre barrier |
 | S14 | GrandPrix247, *FIA: Alonso survived deceleration of 46G* — https://www.grandprix247.com/formula-1-news/fia-alonso-survived-deceleration-of-46g-in-melbourne-shunt | Alonso speeds and g |
 | S15 | RaceFans, F1 minimum weight history — https://www.racefans.net/?p=93822 | 1994 minimum weight ~500 kg excluding driver |
+| S16 | GrandPrix247, *Roland Ratzenberger: A horrid Saturday at Imola 1994 remembered* (30 Apr 2025) — https://www.grandprix247.com/2025/04/30/roland-ratzenberger-his-final-lap-at-imola-1994-f1-accident-anniversary/ | Ratzenberger: wing failed at ~308 km/h, outside concrete barrier, slid along wall, ~13:15, qualifying 2 |
+| S17 | Formula1.com, *A racer through and through — Ratzenberger remembered* (2014) — https://www.formula1.com/en/latest/features/2014/4/A-racer-through-and-through---Ratzenberger-remembered.html | Ratzenberger: >300 km/h, front wing failure after Acque Minerali off |
 
 ## Note for the paper
 Wikipedia pages are used here to locate primary sources. For the final paper,

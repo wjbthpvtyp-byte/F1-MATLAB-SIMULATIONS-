@@ -1,7 +1,7 @@
 # Python mirror of the MATLAB engine in src/, used to cross-check results.
 # Not needed to run the MATLAB cases. Requires numpy.
 import numpy as np
-P=dict(g=9.81,dt=1e-5,tend=0.5,kun=2e7,cdamp=1e5,Fram_max=300e3,ram_stroke=0.95,tau=0.002,S=0.2,ms=100,cs=5e3,kstop=1e8,
+P=dict(S_reserve=0.02,g=9.81,dt=1e-5,tend=0.5,kun=2e7,cdamp=1e5,Fram_max=300e3,ram_stroke=0.95,tau=0.002,S=0.2,ms=100,cs=5e3,kstop=1e8,
  Fmin=80e3,Fmax=600e3,sf=1.0,t_sense=0.015,t_upd=1e-3,vlock=1.5,v_pre=0.0,a_pre=10*9.81,v_err=0.0,cameraOK=True,online=True)
 CARS={'2020s':dict(mass=798,d=[0,0.01,0.46],F=[0,360e3,420e3],k=1e7),'1994':dict(mass=610,d=[0,0.01,0.36],F=[0,250e3,300e3],k=1e7)}
 def barrier(t,s=1):
@@ -43,8 +43,8 @@ def sim(mode,v0,car,C,p):
     if not p['online']: R=S=False
     act=R or S
     t=0;xc=0;vc=v0;xb=0;vb=0;dmax=0;Fr=0;Ft=np.inf
-    if act and p['cameraOK']: Ft=target(0.5*mc*(v0*(1+p['v_err']))**2,0,p['S']*S,R,S,C,p)
-    tn=p['t_sense'];A=[];X=[];V=[]
+    if act and p['cameraOK']: Ft=target(0.5*mc*(v0*(1+p['v_err']))**2,0,max(p['S']-p.get('S_reserve',0.03),0)*S,R,S,C,p)
+    tn=p['t_sense'];A=[];X=[];V=[];stopped=False
     pre = S and act and p['cameraOK'] and p.get('v_pre',0)>0
     if pre:
         tr=p['v_pre']/p['a_pre']; t=-tr-0.005; xc=v0*t   # camera triggers retraction before contact
@@ -61,18 +61,22 @@ def sim(mode,v0,car,C,p):
         else: Ff=0
         if act and t>=tn:
             tn+=p['t_upd']
-            if vc>0.5: Ft=target(0.5*mc*vc**2,max(d,0),max(p['S']-xb,0)*S,R,S,C,p)
+            if vc>0.5: Ft=target(0.5*mc*vc**2,max(d,0),max(p['S']-p.get('S_reserve',0.03)-xb,0)*S,R,S,C,p)
+        if act and p.get('reboundLock',True) and not stopped and vc<=0: stopped=True
         if R:
             cmd=0
-            if np.isfinite(Ft) and d>0 and vc>0 and d<p['ram_stroke']: cmd=min(max(Ft-Ff,0),p['Fram_max'])
+            if np.isfinite(Ft) and d>0 and vc>0 and not stopped and d<p['ram_stroke']: cmd=min(max(Ft-Ff,0),p['Fram_max'])
             Fr+=(cmd-Fr)*dt/p['tau']
+            if vc-vb<=0: Fr=0.0   # a damper resists compression only; it cannot push the car out
         F=Ff+Fr
         if S:
             Fs=Ft*(mc+ms)/mc
+            if stopped: Fs=p.get('F_release',5e3)
             if vb>0 and vb<vc-p['vlock']: Fs=0.0   # let sled catch up with car
             Fst=p['kstop']*(xb-p['S']) if xb>p['S'] else 0
             if pre and d<=0 and vb>0: xb+=vb*dt          # actuator holds retraction speed until contact
             elif vb<=0 and F<=Fs and Fst==0: vb=0
+            elif stopped and vb<0: vb=0
             else:
                 vb+=(F-Fs-p['cs']*(vb-vc)-Fst)/ms*dt
                 if vb<0: vb=0

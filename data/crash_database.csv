@@ -1,6 +1,6 @@
 id,driver,event,date,series,barrier_type,impact_speed_kmh,speed_before_kmh,impact_angle_deg,peak_g,outcome,fatal,data_quality,sources
 1,Ayrton Senna,San Marino GP Imola (Tamburello),1994-05-01,F1,concrete,211,309,unknown (shallow),not recorded,Fatal head injuries (wheel/suspension struck helmet),yes,speed documented; angle and g not published,S1;S2;S3;S4
-2,Roland Ratzenberger,San Marino GP Imola qualifying (Villeneuve),1994-04-30,F1,concrete,314,,unknown (almost head-on),500 (newspaper report; unverified),Fatal (basilar skull fracture),yes,speed documented; g unverified,S2;S5
+2,Roland Ratzenberger,San Marino GP Imola qualifying (Villeneuve),1994-04-30,F1,concrete,314,308 (when wing failed),unknown (almost head-on then slid along wall),500 (newspaper report; unverified),Fatal (basilar skull fracture),yes,speed documented; g unverified,S2;S4;S5;S16;S17
 3,Anthoine Hubert,Belgian GP F2 Spa (Raidillon exit),2019-08-31,F2,barrier (type not stated),216,,~40,33.7 (barrier); 81.8 (secondary car-to-car impact at 218 km/h ~86 deg),Fatal (secondary impact after rebound to track),yes,FIA investigation report,S6
 4,Romain Grosjean,Bahrain GP (Turn 3 exit),2020-11-29,F1,armco (triple guardrail),192,241,29,67,Burns to hands,no,FIA investigation report,S7
 5,Robert Kubica,Canadian GP Montreal,2007-06-10,F1,concrete,232,280+,unknown,75 (front) / 28 (rear),Concussion,no,ADR data via press; angle not published,S8;S9

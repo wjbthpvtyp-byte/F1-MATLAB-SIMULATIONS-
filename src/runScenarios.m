@@ -41,4 +41,8 @@ function [R, M, info] = runScenarios(crash, car, cond, angleDeg, P)
     info.barrierName = bReal.name;
     info.cond        = cond;
     info.failsafeOK  = abs(M.failsafe.clip3 - M.tecpro.clip3) < 0.1;
+    % lowest g physically possible in each space (perfect controller)
+    KE = 0.5*car.mass*vN^2;
+    info.bestSmall_g = theoreticalBest(KE, P.S,       car, Ctec, Pc);
+    info.bestLarge_g = theoreticalBest(KE, P.S_large, car, Ctec, Pc);
 end

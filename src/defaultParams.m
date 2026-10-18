@@ -24,6 +24,9 @@ function P = defaultParams()
     P.vlock = 1.5;       % sled slides freely until within this speed of the car [m/s]
     P.v_pre = 0;         % camera-triggered pre-retraction speed [m/s] (0 = off)
     P.a_pre = 10*9.81;   % pre-retraction acceleration [m/s^2]
+    P.S_reserve   = 0.02;  % sled stroke kept for the rebound lock [m]
+    P.reboundLock = true;  % after the car stops, release so foam springs back into the sled
+    P.F_release   = 5e3;   % sled hold force during rebound lock [N]
 
     % --- Case 4: complete system WITH large space (first concept) --------
     P.S_large     = 2.5; % sled stroke [m] -> ~2.6 m car travel
