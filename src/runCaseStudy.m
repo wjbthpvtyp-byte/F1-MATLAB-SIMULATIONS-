@@ -14,6 +14,9 @@ function out = runCaseStudy(crash, outDir)
 %     angleNote                     how the angle was obtained
 %     dayCondKey                    weather on the real day (weatherScenario key)
 %
+%     recordedG (optional)          recorded peak g -> impact is calibrated
+%     angleDocumented (optional)    published impact angle [deg]
+%
 %   Produces: console summary, 3 figures (PNG) and 2 CSV tables in outDir.
 
     if ~exist(outDir, 'dir'), mkdir(outDir); end
@@ -30,7 +33,22 @@ function out = runCaseStudy(crash, outDir)
 
     fprintf('%s\n%s\n', crash.name, repmat('=', 1, 70));
     fprintf('Car mass used: %.0f kg  (%s)\n', car.mass, car.massNote);
-    fprintf('Impact angle : %.0f deg  (%s)\n', crash.angleNominal, crash.angleNote);
+
+    % --- calibrate to the recorded g-force when one exists -------------
+    hasRec = isfield(crash, 'recordedG') && ~isempty(crash.recordedG);
+    cal = struct('angle', NaN, 'energyFraction', NaN);
+    if hasRec
+        [ang, cal] = calibrateAngle(crash, car, P);
+        fprintf('Recorded peak: %.1f g  ->  equivalent impact angle %.1f deg', crash.recordedG, ang);
+        if ~isnan(cal.energyFraction)
+            fprintf(' (documented %.0f deg; barrier absorbed %.0f %% of the geometric energy)', ...
+                crash.angleDocumented, 100*cal.energyFraction);
+        end
+        fprintf('\n');
+        crash.angleNominal = ang;
+        crash.angleNote = sprintf('calibrated to the recorded %.1f g', crash.recordedG);
+    end
+    fprintf('Impact angle : %.1f deg  (%s)\n', crash.angleNominal, crash.angleNote);
 
     %% ---------------- 1. THE REAL DAY --------------------------------
     dayCond = weatherScenario(crash.dayCondKey);
@@ -79,6 +97,10 @@ function out = runCaseStudy(crash, outDir)
         'VerticalAlignment', 'bottom', 'FontWeight', 'bold');
     ylabel('Peak deceleration, 3 ms clip (g, log)');
     ylim([max(1, 0.5*min(allG)) 3*max(allG)]);
+    if hasRec
+        yline(crash.recordedG, '--', sprintf('Recorded %.0f g', crash.recordedG), ...
+            'LabelHorizontalAlignment', 'left');
+    end
     title('Peak g  (black line = theoretical best)');
 
     nexttile; hold on; grid on; box on;
@@ -120,7 +142,7 @@ function out = runCaseStudy(crash, outDir)
     exportgraphics(f2, fullfile(outDir, [tag '_angle_sweep.png']), 'Resolution', 200);
 
     %% ---------------- 3. EXTERNAL CONDITIONS ----------------------------
-    condKeys = {'dry', 'light_rain', 'heavy_rain', 'cold', 'hot', 'sun_glare', 'worst'};
+    condKeys = {'dry', 'light_rain', 'heavy_rain', 'cold', 'hot', 'sun_glare', 'night', 'worst'};
     nC = numel(condKeys);
     pkC = zeros(nC, nS);  hicC = pkC;  trC = pkC;  rbC = pkC;  vImp = zeros(nC,1);
     condNames = cell(nC,1);  fsOK = false(nC,1);
@@ -179,6 +201,7 @@ function out = runCaseStudy(crash, outDir)
     writetable(TA, fullfile(outDir, [tag '_angle_sweep.csv']));
     fprintf('\nFigures and CSV tables saved in %s\n', outDir);
 
-    out.R = R;  out.M = M;  out.info = info;
+    out.R = R;  out.M = M;  out.info = info;  out.cal = cal;
     out.conditions = T;  out.angles = TA;
+    out.crash = crash;  out.car = car;
 end

@@ -31,9 +31,10 @@ function P = defaultParams()
     % --- Case 4: complete system WITH large space (first concept) --------
     P.S_large     = 2.5; % sled stroke [m] -> ~2.6 m car travel
     P.v_pre_large = 6;   % pre-retraction speed when there is room for it [m/s]
+    P.pre_frac    = 0.3; % never retract faster than 30 % of the predicted impact speed
 
     % --- smart barrier: (C) controller + camera ---------------------------
-    P.Fmin      = 80e3;  % lowest target force [N]
+    P.Fmin      = 30e3;  % lowest target force [N]
     P.Fmax      = 600e3; % highest target force [N]
     P.sf        = 1.0;   % safety factor on target force
     P.t_sense   = 0.015; % on-board sensors take over after contact [s]

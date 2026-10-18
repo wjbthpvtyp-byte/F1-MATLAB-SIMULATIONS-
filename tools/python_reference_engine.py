@@ -2,8 +2,8 @@
 # Not needed to run the MATLAB cases. Requires numpy.
 import numpy as np
 P=dict(S_reserve=0.02,g=9.81,dt=1e-5,tend=0.5,kun=2e7,cdamp=1e5,Fram_max=300e3,ram_stroke=0.95,tau=0.002,S=0.2,ms=100,cs=5e3,kstop=1e8,
- Fmin=80e3,Fmax=600e3,sf=1.0,t_sense=0.015,t_upd=1e-3,vlock=1.5,v_pre=0.0,a_pre=10*9.81,v_err=0.0,cameraOK=True,online=True)
-CARS={'2020s':dict(mass=798,d=[0,0.01,0.46],F=[0,360e3,420e3],k=1e7),'1994':dict(mass=610,d=[0,0.01,0.36],F=[0,250e3,300e3],k=1e7)}
+ Fmin=30e3,Fmax=600e3,sf=1.0,t_sense=0.015,t_upd=1e-3,vlock=1.5,v_pre=0.0,a_pre=10*9.81,v_err=0.0,cameraOK=True,online=True)
+CARS={'2020s':dict(mass=798,d=[0,0.10,0.46],F=[0,300e3,420e3],k=1e7),'1994':dict(mass=610,d=[0,0.08,0.36],F=[0,220e3,300e3],k=1e7),'2000s':dict(mass=600,d=[0,0.10,0.40],F=[0,260e3,360e3],k=1e7)}
 def barrier(t,s=1):
     B={'concrete':([0,0.001],[0,0.5e6]),'armco':([0,0.05,0.6],[0,150e3,350e3]),'tyre':([0,0.02,0.7],[0,40e3,300e3]),'tecpro':([0,0.02,1.0],[0,60e3,360e3])}
     d,F=B[t]; F=np.array(F)*(s if t!='concrete' else 1); return dict(d=np.array(d),F=F,k=5e8)
@@ -47,9 +47,10 @@ def sim(mode,v0,car,C,p):
     tn=p['t_sense'];A=[];X=[];V=[];stopped=False
     pre = S and act and p['cameraOK'] and p.get('v_pre',0)>0
     if pre:
-        tr=p['v_pre']/p['a_pre']; t=-tr-0.005; xc=v0*t   # camera triggers retraction before contact
+        vpre=min(p['v_pre'],p.get('pre_frac',0.3)*v0*(1+p['v_err']))
+        tr=vpre/p['a_pre']; t=-tr-0.005; xc=v0*t   # camera triggers retraction before contact
         while t<0:
-            if t>=-tr and vb<p['v_pre']: vb=min(p['v_pre'],vb+p['a_pre']*dt)
+            if t>=-tr and vb<vpre: vb=min(vpre,vb+p['a_pre']*dt)
             xb+=vb*dt; xc+=vc*dt; t+=dt
     while t<p['tend']:
         d=xc-xb
@@ -90,7 +91,7 @@ def sim(mode,v0,car,C,p):
 def weather(key):
     c=dict(grip=1,T=20,cam=True,verr=0)
     c.update({'dry':{},'light_rain':dict(grip=0.75,T=15,verr=0.1),'heavy_rain':dict(grip=0.55,T=12,cam=False),
-      'cold':dict(T=5),'hot':dict(T=40),'sun_glare':dict(verr=0.2),'worst':dict(grip=0.55,T=5,cam=False)}[key])
+      'cold':dict(T=5),'hot':dict(T=40),'sun_glare':dict(verr=0.2),'night':dict(verr=0.1,T=22),'worst':dict(grip=0.55,T=5,cam=False)}[key])
     c['fs']=1-0.006*(c['T']-20); c['tau']=0.002*(1+0.04*max(0,20-c['T'])); return c
 def four(crash,carkey,wkey,ang):
     c=weather(wkey); p=dict(P); p.update(tau=c['tau'],cameraOK=c['cam'],v_err=c['verr'])

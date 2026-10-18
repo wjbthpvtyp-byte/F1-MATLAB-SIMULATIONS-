@@ -26,6 +26,8 @@ one number.
 | S15 | RaceFans, F1 minimum weight history — https://www.racefans.net/?p=93822 | 1994 minimum weight ~500 kg excluding driver |
 | S16 | GrandPrix247, *Roland Ratzenberger: A horrid Saturday at Imola 1994 remembered* (30 Apr 2025) — https://www.grandprix247.com/2025/04/30/roland-ratzenberger-his-final-lap-at-imola-1994-f1-accident-anniversary/ | Ratzenberger: wing failed at ~308 km/h, outside concrete barrier, slid along wall, ~13:15, qualifying 2 |
 | S17 | Formula1.com, *A racer through and through — Ratzenberger remembered* (2014) — https://www.formula1.com/en/latest/features/2014/4/A-racer-through-and-through---Ratzenberger-remembered.html | Ratzenberger: >300 km/h, front wing failure after Acque Minerali off |
+| S18 | Wikipedia, *Dallara F2 2018* — https://en.wikipedia.org/wiki/Dallara_F2_2018 | F2 car: 720 kg incl. driver and fuel |
+| S19 | GPFans, *F1 car weight explained* — https://www.gpfans.com/en/f1-news/1028252/f1-car-weight-explained/ ; F1Technical, *F1MATHS: weight limit evolution* — https://www.f1technical.net/news/28346 | Minimum weights: 2007 605 kg, 2015–16 702 kg, 2020 746 kg, 2022 798 kg (incl. driver, excl. fuel) |
 
 ## Note for the paper
 Wikipedia pages are used here to locate primary sources. For the final paper,

@@ -57,18 +57,29 @@ sun glare, worst case) and across a range of impact angles when the angle
 was not published.
 
 ## The 10 crashes
-| # | Crash | Barrier | Fatal | Script |
-|---|-------|---------|-------|--------|
-| 1 | Ayrton Senna, Imola 1994 | Concrete | Yes | `Case01_Senna_Imola1994.m` ✅ |
-| 2 | Roland Ratzenberger, Imola 1994 | Concrete | Yes | `Case02_Ratzenberger_Imola1994.m` ✅ |
-| 3 | Anthoine Hubert, Spa 2019 (F2) | Barrier + secondary impact | Yes | planned |
-| 4 | Romain Grosjean, Bahrain 2020 | Armco | No | planned |
-| 5 | Robert Kubica, Canada 2007 | Concrete | No | planned |
-| 6 | Carlos Sainz, Sochi 2015 | TecPro | No | planned |
-| 7 | Rubens Barrichello, Imola 1994 | Tyres | No | planned |
-| 8 | Mick Schumacher, Jeddah 2022 | Concrete | No | planned |
-| 9 | Michael Schumacher, Silverstone 1999 | Tyres | No | planned |
-| 10 | Fernando Alonso, Melbourne 2016 | Wall + gravel | No | planned |
+| # | Crash | Real barrier | Fatal | Recorded g | Script |
+|---|-------|--------------|-------|-----------|--------|
+| 1 | Ayrton Senna, Imola 1994 | Concrete | Yes | — | `Case01_Senna_Imola1994.m` |
+| 2 | Roland Ratzenberger, Imola 1994 | Concrete | Yes | (500, unverified) | `Case02_Ratzenberger_Imola1994.m` |
+| 3 | Anthoine Hubert, Spa 2019 (F2) | Tyres (assumed) | Yes | 33.7 | `Case03_Hubert_Spa2019.m` |
+| 4 | Romain Grosjean, Bahrain 2020 | Armco | No | 67 | `Case04_Grosjean_Bahrain2020.m` |
+| 5 | Robert Kubica, Canada 2007 | Concrete | No | 75 | `Case05_Kubica_Canada2007.m` |
+| 6 | Carlos Sainz, Sochi 2015 | TecPro | No | 46 | `Case06_Sainz_Sochi2015.m` |
+| 7 | Rubens Barrichello, Imola 1994 | Tyres | No | 95 | `Case07_Barrichello_Imola1994.m` |
+| 8 | Mick Schumacher, Jeddah 2022 | Concrete | No | 33 | `Case08_MSchumacher_Jeddah2022.m` |
+| 9 | Michael Schumacher, Silverstone 1999 | Tyres | No | — | `Case09_Schumacher_Silverstone1999.m` |
+| 10 | Fernando Alonso, Melbourne 2016 | Concrete | No | 45 (lateral) | `Case10_Alonso_Melbourne2016.m` |
+
+Run all ten and build the summary table/figure with `run('runAllCases.m')`
+(or `standalone/ALL_10_CASES_STANDALONE.m` in MATLAB Online).
+
+### Calibration to recorded g (Equivalent Barrier Speed)
+Real cars glance off, spin, lose wheels and push barriers back, so the
+barrier absorbs less than the full geometric impact energy. For every crash
+with a recorded peak g, the impact angle is adjusted until the REAL barrier
+in the model reproduces the recorded g (`src/calibrateAngle.m`). TecPro and
+our system are then tested at that same, measured severity.
+Check: for Grosjean the calibration needs ~29.6°; the FIA report gives 29°.
 
 ## Model and limitations
 - 1-D impulse–momentum model, fixed-step semi-implicit Euler (10 µs step).

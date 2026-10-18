@@ -11,6 +11,7 @@ for this study; they should be refined with material and sensor tests.
 | **Rain (heavy) + spray** | Much less grip → much higher impact speed | Camera may not see the car at all. The barrier then waits for its own on-board sensors (first 15 ms unassisted) | grip 0.55; camera blind; air 12 °C |
 | **Cold (5 °C)** | — | Foam is stiffer (harder push early), hydraulic oil is thicker → valves react more slowly | foam force +9 %; valve time 2 ms → 3.2 ms |
 | **Hot (40 °C air)** | — | Foam is softer (more crush needed). Oil is thinner (no slowdown modelled) | foam force −12 % |
+| **Night race, floodlights** | — | Artificial light and reflections reduce camera accuracy | camera error +10 %; air 22 °C |
 | **Low sun glare** | — | Camera over-estimates speed → controller starts too firm | camera error +20 % |
 | **Worst case** | Cold heavy rain | Camera blind + slow valves + very high impact speed | grip 0.55, 5 °C, camera blind |
 

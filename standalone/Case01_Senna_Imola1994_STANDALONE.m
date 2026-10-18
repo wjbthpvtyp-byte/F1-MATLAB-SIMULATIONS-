@@ -143,9 +143,54 @@ function d = elemDepth(F, e)
     d(~in) = e.d(end) + (F(~in) - e.F(end))/e.kEnd;
 end
 
+function [ang, info] = calibrateAngle(crash, car, P)
+%CALIBRATEANGLE  Equivalent impact angle that reproduces the recorded g-force.
+%   Real crashes lose energy that a 1-D model does not see: the car glances
+%   off, spins, sheds wheels, pushes the barrier back. Accident
+%   reconstruction handles this with an EQUIVALENT BARRIER SPEED. Here the
+%   impact angle is adjusted until the REAL barrier in the model gives the
+%   recorded peak g (crash.recordedG) on the real day. TecPro and our
+%   system are then tested at exactly the same, measured, severity.
+%
+%   info.energyFraction = calibrated / geometric normal energy (if the
+%   documented angle crash.angleDocumented is known), i.e. how much of the
+%   car's energy the barrier actually had to absorb.
+
+    cond = weatherScenario(crash.dayCondKey);
+    [Pc, vImp] = applyConditions(P, cond, crash);
+    C = buildContact(car, barrierModel(crash.barrierType, cond.foamScale));
+    g = @(a) calibPeakG(a, vImp, car, C, Pc);
+
+    lo = 0.5;  hi = 90;
+    if g(hi) < crash.recordedG
+        ang = hi;                                  % even head-on is too gentle
+    else
+        for it = 1:25
+            mid = 0.5*(lo + hi);
+            if g(mid) < crash.recordedG, lo = mid; else, hi = mid; end
+        end
+        ang = 0.5*(lo + hi);
+    end
+    info.angle   = ang;
+    info.vNormal = vImp/3.6*sind(ang);
+    info.modelG  = g(ang);
+    if isfield(crash, 'angleDocumented') && ~isempty(crash.angleDocumented)
+        info.energyFraction = (sind(ang)/sind(crash.angleDocumented))^2;
+    else
+        info.energyFraction = NaN;
+    end
+end
+
+function G = calibPeakG(a, vImp, car, C, Pc)
+% Peak g of the real barrier at impact angle a (helper for calibration).
+    r = simulateCrash('passive', vImp/3.6*sind(a), car, C, Pc);
+    m = crashMetrics(r, Pc);
+    G = m.clip3;
+end
+
 function car = carModel(era)
 %CARMODEL  Mass and front crush behaviour of an F1 car of a given era.
-%   car = carModel('2020s') or carModel('1994')
+%   car = carModel('2020s'), carModel('2000s') or carModel('1994')
 %
 %   The crush curve is piecewise linear: force car.F(i) is reached at
 %   crush depth car.d(i). Beyond the last point the survival cell is
@@ -160,8 +205,8 @@ function car = carModel(era)
             car.name = '2020s F1 car';
             car.mass = 798;                     % FIA minimum incl. driver [kg]
             car.massNote = 'FIA minimum weight incl. driver (2020s regulations)';
-            car.d = [0     0.01   0.46];        % crush depth [m]
-            car.F = [0     360e3  420e3];       % force [N]
+            car.d = [0     0.10   0.46];        % crush depth [m]  (tapered nose:
+            car.F = [0     300e3  420e3];       % force [N]         force builds over 10 cm)
             car.kEnd = 1e7;                     % survival cell [N/m]
 
         case '1994'
@@ -171,8 +216,17 @@ function car = carModel(era)
             % history) + ~70 kg driver + ~40 kg fuel early in a refuelling race.
             car.mass = 610;
             car.massNote = '500 kg car (1994 min, excl. driver) + ~70 kg driver + ~40 kg fuel (estimate)';
-            car.d = [0     0.01   0.36];
-            car.F = [0     250e3  300e3];
+            car.d = [0     0.08   0.36];
+            car.F = [0     220e3  300e3];
+            car.kEnd = 1e7;
+
+        case '2000s'
+            % 1999-2010 cars: homologated nose, lighter than today.
+            car.name = '1999-2010 F1 car';
+            car.mass = 600;                     % ~600 kg incl. driver (1995-2007 era rules)
+            car.massNote = '~600 kg minimum incl. driver (estimate for the era)';
+            car.d = [0     0.10   0.40];
+            car.F = [0     260e3  360e3];
             car.kEnd = 1e7;
 
         otherwise
@@ -251,9 +305,10 @@ function P = defaultParams()
     % --- Case 4: complete system WITH large space (first concept) --------
     P.S_large     = 2.5; % sled stroke [m] -> ~2.6 m car travel
     P.v_pre_large = 6;   % pre-retraction speed when there is room for it [m/s]
+    P.pre_frac    = 0.3; % never retract faster than 30 % of the predicted impact speed
 
     % --- smart barrier: (C) controller + camera ---------------------------
-    P.Fmin      = 80e3;  % lowest target force [N]
+    P.Fmin      = 30e3;  % lowest target force [N]
     P.Fmax      = 600e3; % highest target force [N]
     P.sf        = 1.0;   % safety factor on target force
     P.t_sense   = 0.015; % on-board sensors take over after contact [s]
@@ -311,6 +366,9 @@ function out = runCaseStudy(crash, outDir)
 %     angleNote                     how the angle was obtained
 %     dayCondKey                    weather on the real day (weatherScenario key)
 %
+%     recordedG (optional)          recorded peak g -> impact is calibrated
+%     angleDocumented (optional)    published impact angle [deg]
+%
 %   Produces: console summary, 3 figures (PNG) and 2 CSV tables in outDir.
 
     if ~exist(outDir, 'dir'), mkdir(outDir); end
@@ -327,7 +385,22 @@ function out = runCaseStudy(crash, outDir)
 
     fprintf('%s\n%s\n', crash.name, repmat('=', 1, 70));
     fprintf('Car mass used: %.0f kg  (%s)\n', car.mass, car.massNote);
-    fprintf('Impact angle : %.0f deg  (%s)\n', crash.angleNominal, crash.angleNote);
+
+    % --- calibrate to the recorded g-force when one exists -------------
+    hasRec = isfield(crash, 'recordedG') && ~isempty(crash.recordedG);
+    cal = struct('angle', NaN, 'energyFraction', NaN);
+    if hasRec
+        [ang, cal] = calibrateAngle(crash, car, P);
+        fprintf('Recorded peak: %.1f g  ->  equivalent impact angle %.1f deg', crash.recordedG, ang);
+        if ~isnan(cal.energyFraction)
+            fprintf(' (documented %.0f deg; barrier absorbed %.0f %% of the geometric energy)', ...
+                crash.angleDocumented, 100*cal.energyFraction);
+        end
+        fprintf('\n');
+        crash.angleNominal = ang;
+        crash.angleNote = sprintf('calibrated to the recorded %.1f g', crash.recordedG);
+    end
+    fprintf('Impact angle : %.1f deg  (%s)\n', crash.angleNominal, crash.angleNote);
 
     %% ---------------- 1. THE REAL DAY --------------------------------
     dayCond = weatherScenario(crash.dayCondKey);
@@ -376,6 +449,10 @@ function out = runCaseStudy(crash, outDir)
         'VerticalAlignment', 'bottom', 'FontWeight', 'bold');
     ylabel('Peak deceleration, 3 ms clip (g, log)');
     ylim([max(1, 0.5*min(allG)) 3*max(allG)]);
+    if hasRec
+        yline(crash.recordedG, '--', sprintf('Recorded %.0f g', crash.recordedG), ...
+            'LabelHorizontalAlignment', 'left');
+    end
     title('Peak g  (black line = theoretical best)');
 
     nexttile; hold on; grid on; box on;
@@ -417,7 +494,7 @@ function out = runCaseStudy(crash, outDir)
     exportgraphics(f2, fullfile(outDir, [tag '_angle_sweep.png']), 'Resolution', 200);
 
     %% ---------------- 3. EXTERNAL CONDITIONS ----------------------------
-    condKeys = {'dry', 'light_rain', 'heavy_rain', 'cold', 'hot', 'sun_glare', 'worst'};
+    condKeys = {'dry', 'light_rain', 'heavy_rain', 'cold', 'hot', 'sun_glare', 'night', 'worst'};
     nC = numel(condKeys);
     pkC = zeros(nC, nS);  hicC = pkC;  trC = pkC;  rbC = pkC;  vImp = zeros(nC,1);
     condNames = cell(nC,1);  fsOK = false(nC,1);
@@ -476,8 +553,9 @@ function out = runCaseStudy(crash, outDir)
     writetable(TA, fullfile(outDir, [tag '_angle_sweep.csv']));
     fprintf('\nFigures and CSV tables saved in %s\n', outDir);
 
-    out.R = R;  out.M = M;  out.info = info;
+    out.R = R;  out.M = M;  out.info = info;  out.cal = cal;
     out.conditions = T;  out.angles = TA;
+    out.crash = crash;  out.car = car;
 end
 
 function [R, M, info] = runScenarios(crash, car, cond, angleDeg, P)
@@ -583,10 +661,13 @@ function r = simulateCrash(mode, v0, car, C, P)
     % so the car meets a barrier that is already moving away from it.
     pre = useSled && active && P.cameraOK && P.v_pre > 0;
     if pre
-        tr = P.v_pre/P.a_pre;                     % time to reach retraction speed
+        % never retract faster than a fraction of the predicted impact speed,
+        % otherwise a gentle impact would never reach the barrier
+        vpre = min(P.v_pre, P.pre_frac*v0*(1 + P.v_err));
+        tr = vpre/P.a_pre;                        % time to reach retraction speed
         tp = -tr - 0.005;  xc = v0*tp;            % car position when retraction starts
         while tp < 0
-            if tp >= -tr && vb < P.v_pre, vb = min(P.v_pre, vb + P.a_pre*dt); end
+            if tp >= -tr && vb < vpre, vb = min(vpre, vb + P.a_pre*dt); end
             xb = xb + vb*dt;  xc = xc + vc*dt;  tp = tp + dt;
         end
     end
@@ -715,6 +796,77 @@ function E = absorbedEnergy(F, d, rem, useRams, useSled, C, P)
     E = Ebar + F*rem*useSled;
 end
 
+function S = summarizeStudies(outs, outDir)
+%SUMMARIZESTUDIES  One table and one figure comparing all crash studies.
+%   outs : cell array of outputs from runCaseStudy
+%   Writes results/summary_all_cases.csv and summary_all_cases.png
+    if ~exist(outDir, 'dir'), mkdir(outDir); end
+    n = numel(outs);
+    [keys, labels, short, cols] = scenarioLabels();
+    id = zeros(n,1);  name = cell(n,1);  rec = nan(n,1);  angU = zeros(n,1);
+    eFrac = nan(n,1);  pk = zeros(n,4);  rb = zeros(n,4);  best = zeros(n,2);
+    fs = false(n,1);  vImp = zeros(n,1);  KE = zeros(n,1);
+    for i = 1:n
+        o = outs{i};
+        id(i) = o.crash.id;  name{i} = o.crash.shortName;
+        if isfield(o.crash, 'recordedG') && ~isempty(o.crash.recordedG), rec(i) = o.crash.recordedG; end
+        angU(i) = o.info.angle;  eFrac(i) = o.cal.energyFraction;
+        vImp(i) = o.info.vImpact_kmh;  KE(i) = o.info.KE_kJ;
+        for k = 1:4
+            pk(i,k) = o.M.(keys{k}).clip3;
+            rb(i,k) = o.M.(keys{k}).rebound;
+        end
+        best(i,:) = [o.info.bestSmall_g o.info.bestLarge_g];
+        fs(i) = o.info.failsafeOK;
+    end
+    vn = matlab.lang.makeValidName(short);
+    S = [table(id, name, vImp, angU, KE, rec, eFrac, 'VariableNames', ...
+            {'Case','Crash','ImpactSpeed_kmh','AngleUsed_deg','EnergyIntoBarrier_kJ', ...
+             'RecordedG','EnergyFraction'}), ...
+         array2table(pk, 'VariableNames', strcat('PeakG_', vn)), ...
+         array2table(best, 'VariableNames', {'BestPossible_Small','BestPossible_Large'}), ...
+         array2table(rb, 'VariableNames', strcat('Rebound_kmh_', vn)), ...
+         table(100*(1 - pk(:,3)./pk(:,2)), 100*(1 - pk(:,4)./pk(:,2)), fs, 'VariableNames', ...
+            {'Reduction_Small_pct','Reduction_Large_pct','FailSafeOK'})];
+    writetable(S, fullfile(outDir, 'summary_all_cases.csv'));
+
+    fprintf('\n%s\n  SUMMARY — ALL CASE STUDIES (real day)\n%s\n', repmat('=',1,104), repmat('=',1,104));
+    fprintf('%-4s %-20s %8s %9s %9s %9s %9s %9s %10s %10s\n', '#', 'Crash', 'Rec. g', ...
+        'Real', 'TecPro', 'Small', 'Large', 'Best(S)', 'Small vs T', 'Rebound T>S');
+    for i = 1:n
+        fprintf('%-4d %-20s %8s %7.1f g %7.1f g %7.1f g %7.1f g %7.1f g %+9.0f%% %5.1f>%4.1f\n', ...
+            id(i), name{i}, num2strOrDash(rec(i)), pk(i,1), pk(i,2), pk(i,3), pk(i,4), ...
+            best(i,1), -S.Reduction_Small_pct(i), rb(i,2), rb(i,3));
+    end
+
+    f = figure('Name','All case studies','Color','w','Position',[40 40 1500 700]);
+    tiledlayout(2,1,'TileSpacing','compact','Padding','compact');
+    nexttile;
+    b = bar(pk, 'grouped'); grid on; box on;
+    for k = 1:4, b(k).FaceColor = cols(k,:); end
+    hold on;
+    ok = ~isnan(rec);
+    plot(find(ok), rec(ok), 'kp', 'MarkerFaceColor', 'y', 'MarkerSize', 12);
+    yline(67, '--k', '67 g (Grosjean, survived)', 'LabelHorizontalAlignment', 'left');
+    set(gca, 'XTick', 1:n, 'XTickLabel', name, 'YScale', 'log');
+    ylabel('Peak deceleration, 3 ms clip (g)');
+    title('All 10 crashes: real barrier vs TecPro vs our system');
+    legend([labels, {'Recorded g (real crash)'}], 'Location', 'northeastoutside');
+    nexttile;
+    b2 = bar(rb, 'grouped'); grid on; box on;
+    for k = 1:4, b2(k).FaceColor = cols(k,:); end
+    set(gca, 'XTick', 1:n, 'XTickLabel', name);
+    ylabel('Rebound toward track (km/h)');
+    title('Rebound speed (risk of a secondary impact, as in Hubert 2019)');
+    legend(labels, 'Location', 'northeastoutside');
+    exportgraphics(f, fullfile(outDir, 'summary_all_cases.png'), 'Resolution', 200);
+    fprintf('\nSummary saved in %s\n', outDir);
+end
+
+function s = num2strOrDash(x)
+    if isnan(x), s = '—'; else, s = sprintf('%.1f', x); end
+end
+
 function gBest = theoreticalBest(KE, S, car, C, P)
 %THEORETICALBEST  Lowest possible peak deceleration [g] for this crash and space.
 %   With TecPro unchanged, the foam only crushes where its own force is at
@@ -731,7 +883,7 @@ end
 function c = weatherScenario(key, airTempC)
 %WEATHERSCENARIO  External conditions that can affect the crash and our system.
 %   c = weatherScenario(key)            key: 'dry','light_rain','heavy_rain',
-%                                            'cold','hot','sun_glare','worst'
+%                                            'cold','hot','sun_glare','night','worst'
 %   c = weatherScenario(key, airTempC)  override the air temperature
 %
 %   What each condition changes (see docs/external_factors.md):
@@ -759,6 +911,8 @@ function c = weatherScenario(key, airTempC)
             c.name = 'Hot (40 °C air)'; c.airTemp = 40;
         case 'sun_glare'
             c.name = 'Low sun glare (camera +20 % error)'; c.v_err = 0.20;
+        case 'night'
+            c.name = 'Night race, floodlights (camera +10 % error)'; c.v_err = 0.10; c.airTemp = 22;
         case 'worst'
             c.name = 'Worst case: cold heavy rain, camera blind';
             c.grip = 0.55; c.airTemp = 5; c.cameraOK = false;

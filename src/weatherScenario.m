@@ -1,7 +1,7 @@
 function c = weatherScenario(key, airTempC)
 %WEATHERSCENARIO  External conditions that can affect the crash and our system.
 %   c = weatherScenario(key)            key: 'dry','light_rain','heavy_rain',
-%                                            'cold','hot','sun_glare','worst'
+%                                            'cold','hot','sun_glare','night','worst'
 %   c = weatherScenario(key, airTempC)  override the air temperature
 %
 %   What each condition changes (see docs/external_factors.md):
@@ -29,6 +29,8 @@ function c = weatherScenario(key, airTempC)
             c.name = 'Hot (40 °C air)'; c.airTemp = 40;
         case 'sun_glare'
             c.name = 'Low sun glare (camera +20 % error)'; c.v_err = 0.20;
+        case 'night'
+            c.name = 'Night race, floodlights (camera +10 % error)'; c.v_err = 0.10; c.airTemp = 22;
         case 'worst'
             c.name = 'Worst case: cold heavy rain, camera blind';
             c.grip = 0.55; c.airTemp = 5; c.cameraOK = false;

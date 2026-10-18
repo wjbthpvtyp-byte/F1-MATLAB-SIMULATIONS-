@@ -38,10 +38,13 @@ function r = simulateCrash(mode, v0, car, C, P)
     % so the car meets a barrier that is already moving away from it.
     pre = useSled && active && P.cameraOK && P.v_pre > 0;
     if pre
-        tr = P.v_pre/P.a_pre;                     % time to reach retraction speed
+        % never retract faster than a fraction of the predicted impact speed,
+        % otherwise a gentle impact would never reach the barrier
+        vpre = min(P.v_pre, P.pre_frac*v0*(1 + P.v_err));
+        tr = vpre/P.a_pre;                        % time to reach retraction speed
         tp = -tr - 0.005;  xc = v0*tp;            % car position when retraction starts
         while tp < 0
-            if tp >= -tr && vb < P.v_pre, vb = min(P.v_pre, vb + P.a_pre*dt); end
+            if tp >= -tr && vb < vpre, vb = min(vpre, vb + P.a_pre*dt); end
             xb = xb + vb*dt;  xc = xc + vc*dt;  tp = tp + dt;
         end
     end
