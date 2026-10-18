@@ -24,9 +24,13 @@ function E = absorbedEnergy(F, d, rem, useRams, useSled, C, P)
 % Energy still absorbable if the force on the car is held at F.
     dF = max(foamDepthAt(F, C), d);                 % where the barrier alone reaches F
     if useRams
-        Ebar = F*(dF - d);                          % rams top the force up to a flat F
-        if dF > P.ram_stroke
-            Ebar = min(Ebar, F*max(0, P.ram_stroke - d));
+        % Inside the ram stroke the rams top the force up to a flat F.
+        Ebar = F*max(0, min(dF, P.ram_stroke) - d);
+        % Beyond the ram stroke the barrier and car nose keep absorbing alone.
+        a = max(d, P.ram_stroke);
+        if dF > a
+            x = linspace(a, dF, 25);
+            Ebar = Ebar + trapz(x, crushForce(x, C));
         end
     else
         x = linspace(d, dF, 25);

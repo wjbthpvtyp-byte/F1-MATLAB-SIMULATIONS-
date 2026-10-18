@@ -34,11 +34,18 @@ run('cases/Case01_Senna_Imola1994.m')
 Each case adds `src/` to the path itself and saves figures and CSV tables
 to `results/caseXX/`.
 
-## Every case compares four barrier situations
-1. **Actual** – the barrier that was really there
-2. **TecPro** – a standard TecPro barrier in the same place
-3. **Smart** – our system
-4. **Smart (failed)** – our system offline (fail-safe check)
+## Every case compares
+**Baselines**
+- **Actual** – the barrier that was really there that day
+- **TecPro** – a standard TecPro barrier in the same place
+
+**Our system – four options** (TecPro always unchanged)
+1. **Sled only** – 20 cm force-limiting sled
+2. **Rams only** – parallel hydraulic rams, 0 cm extra
+3. **Rams + sled, no camera** – on-board sensors only
+4. **Complete system** – rams + sled + camera prediction
+
+**Fail-safe check** – complete system offline (must equal TecPro)
 
 …under seven external conditions (dry, light rain, heavy rain, cold, hot,
 sun glare, worst case) and across a range of impact angles when the angle
