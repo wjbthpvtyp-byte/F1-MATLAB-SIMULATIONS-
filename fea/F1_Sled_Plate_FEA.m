@@ -15,7 +15,9 @@
 %               LC1 centred impact   x = 0.7 ... 1.3 m
 %               LC2 impact at the end of the module   x = 0.0 ... 0.6 m
 %             The largest force in any Case 3 simulation within the system's
-%             energy capacity was 379 kN (Grosjean, worst-case conditions).
+%             energy capacity was 521 kN (Brayton 1996, heavy rain; 15 crashes
+%             x 8 conditions). 19 of 120 runs exceeded the capacity (all
+%             Ratzenberger and Cevert runs, 3 wet Silverstone 1999 runs).
 %  Supports : three hydraulic cylinder mounts on the rear edge (y = 0),
 %             0.2 m wide, centred at x = 0.3, 1.0, 1.7 m: uy = 0.
 %             Rail guide at the middle mount: ux = 0 (stops rigid sliding).

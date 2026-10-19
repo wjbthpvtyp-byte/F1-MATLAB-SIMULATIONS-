@@ -9,3 +9,8 @@ id,driver,event,date,series,barrier_type,impact_speed_kmh,speed_before_kmh,impac
 8,Mick Schumacher,Saudi Arabian GP Jeddah qualifying (T10),2022-03-26,F1,concrete,~270 (driver estimate),,glancing,33,Unhurt; missed race,no,driver estimate for speed,S12
 9,Michael Schumacher,British GP Silverstone (Stowe),1999-07-11,F1,tyre,107,306,near head-on,not published,Broken leg,no,FIA conclusions,S13
 10,Fernando Alonso,Australian GP Melbourne,2016-03-20,F1,concrete wall + gravel roll,~305 (at first car contact),313,unknown,45 lateral (wall) / 46 (roll) / 20 longitudinal,Rib fractures,no,FIA data via press; wall impact speed uncertain,S14
+11,Greg Moore,CART Marlboro 500 California Speedway,1999-10-31,CART,concrete (no tyre wall),>350 (into infield),,90 (after barrel roll),154,Fatal (head and internal injuries),yes,CART data sensor via Wikipedia,S20
+12,Scott Brayton,Indianapolis 500 practice,1996-05-17,IRL,concrete (outside retaining wall),>370,,not published,not published,Fatal (basilar skull fracture),yes,speed from Wikipedia,S21
+13,Francois Cevert,US GP Watkins Glen qualifying,1973-10-06,F1,armco (guardrail),~241 (eyewitness),,near 90,not recorded,Fatal (injuries from guardrail),yes,eyewitness speed,S22
+14,Gonzalo Rodriguez,CART Laguna Seca practice (Corkscrew),1999-09-11,CART,tyre barrier on concrete wall,not published,,front-first,>150 (press),Fatal (basilar skull fracture),yes,g from press; speed not published,S23;S24;S25
+15,Dale Earnhardt,Daytona 500 last lap,2001-02-18,NASCAR,concrete,253-259,,13.6 (trajectory),48-68 (sled tests),Fatal (basilar skull fracture),yes,NASCAR investigation via Wikipedia,S26

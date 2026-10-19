@@ -70,6 +70,11 @@ function out = runCaseStudy(crash, outDir)
         P.S_large, info.bestLarge_g, M.large.clip3);
     fprintf('Fail-safe check (Case 3 offline): %.1f g vs TecPro %.1f g -> %s\n', ...
         M.failsafe.clip3, M.tecpro.clip3, string(info.failsafeOK));
+    fprintf('\nSame space, passive TecPro only (deeper stack, no hydraulics):\n');
+    fprintf('   %.1f m TecPro: %.1f g   vs Case 3 (same space): %.1f g\n', ...
+        1 + P.S, M.deepSmall.clip3, M.small.clip3);
+    fprintf('   %.1f m TecPro: %.1f g   vs Case 4 (same space): %.1f g\n', ...
+        1 + P.S_large, M.deepLarge.clip3, M.large.clip3);
 
     % --- Figure 1: the real day ---------------------------------------
     f1 = figure('Name', sprintf('%s — real day', crash.shortName), 'Color', 'w', ...
@@ -101,7 +106,9 @@ function out = runCaseStudy(crash, outDir)
         yline(crash.recordedG, '--', sprintf('Recorded %.0f g', crash.recordedG), ...
             'LabelHorizontalAlignment', 'left');
     end
-    title('Peak g  (black line = theoretical best)');
+    plot(3, M.deepSmall.clip3, 'kd', 'MarkerFaceColor', 'w', 'MarkerSize', 8);
+    plot(4, M.deepLarge.clip3, 'kd', 'MarkerFaceColor', 'w', 'MarkerSize', 8);
+    title('Peak g  (line = theoretical best, diamond = deep TecPro, same space)');
 
     nexttile; hold on; grid on; box on;
     reb = cellfun(@(s) M.(s).rebound, keys);
@@ -116,11 +123,12 @@ function out = runCaseStudy(crash, outDir)
     %% ---------------- 2. ANGLE SWEEP ------------------------------------
     fprintf('\nRunning angle sweep (%d angles)...\n', numel(crash.angleSweep));
     nA = numel(crash.angleSweep);
-    pkA = zeros(nS, nA);  bestA = zeros(2, nA);
+    pkA = zeros(nS, nA);  bestA = zeros(2, nA);  deepA = zeros(2, nA);
     for i = 1:nA
         [~, Mi, Ii] = runScenarios(crash, car, dayCond, crash.angleSweep(i), P);
         for k = 1:nS, pkA(k,i) = Mi.(keys{k}).clip3; end
         bestA(:,i) = [Ii.bestSmall_g; Ii.bestLarge_g];
+        deepA(:,i) = [Mi.deepSmall.clip3; Mi.deepLarge.clip3];
     end
     f2 = figure('Name', sprintf('%s — angle sweep', crash.shortName), 'Color', 'w', ...
         'Position', [70 70 1000 580]);
@@ -131,13 +139,16 @@ function out = runCaseStudy(crash, outDir)
     end
     plot(crash.angleSweep, bestA(1,:), ':', 'Color', cols(3,:), 'LineWidth', 1.5);
     plot(crash.angleSweep, bestA(2,:), ':', 'Color', cols(4,:), 'LineWidth', 1.5);
+    plot(crash.angleSweep, deepA(1,:), '--', 'Color', cols(3,:), 'LineWidth', 1.2);
+    plot(crash.angleSweep, deepA(2,:), '--', 'Color', cols(4,:), 'LineWidth', 1.2);
     xline(crash.angleNominal, ':', 'Angle used');
     yline(67, '--k', 'Grosjean 2020: 67 g, survived', 'LabelHorizontalAlignment', 'left');
     set(gca, 'YScale', 'log');
     xlabel(sprintf('Impact angle to barrier (deg)  —  %s', crash.angleNote));
     ylabel('Peak deceleration, 3 ms clip (g)');
     title(sprintf('%s: effect of impact angle', crash.shortName));
-    legend([labels, {'Theoretical best, small space', 'Theoretical best, large space'}], ...
+    legend([labels, {'Theoretical best, small space', 'Theoretical best, large space', ...
+        'Deep TecPro, same space as Case 3', 'Deep TecPro, same space as Case 4'}], ...
         'Location', 'northwest');
     exportgraphics(f2, fullfile(outDir, [tag '_angle_sweep.png']), 'Resolution', 200);
 
@@ -145,12 +156,13 @@ function out = runCaseStudy(crash, outDir)
     condKeys = {'dry', 'light_rain', 'heavy_rain', 'cold', 'hot', 'sun_glare', 'night', 'worst'};
     nC = numel(condKeys);
     pkC = zeros(nC, nS);  hicC = pkC;  trC = pkC;  rbC = pkC;  vImp = zeros(nC,1);
-    condNames = cell(nC,1);  fsOK = false(nC,1);
+    condNames = cell(nC,1);  fsOK = false(nC,1);  deepC = zeros(nC, 2);
     fprintf('Running %d external conditions...\n', nC);
     for i = 1:nC
         c = weatherScenario(condKeys{i});
         [~, Mi, Ii] = runScenarios(crash, car, c, crash.angleNominal, P);
         condNames{i} = c.name;  vImp(i) = Ii.vImpact_kmh;  fsOK(i) = Ii.failsafeOK;
+        deepC(i,:) = [Mi.deepSmall.clip3 Mi.deepLarge.clip3];
         for k = 1:nS
             pkC(i,k)  = Mi.(keys{k}).clip3;
             hicC(i,k) = Mi.(keys{k}).HIC15;
@@ -193,11 +205,13 @@ function out = runCaseStudy(crash, outDir)
          array2table(hicC, 'VariableNames', strcat('HIC_',       vn)), ...
          array2table(trC,  'VariableNames', strcat('Travel_m_',  vn)), ...
          array2table(rbC,  'VariableNames', strcat('Rebound_kmh_', vn)), ...
+         array2table(deepC, 'VariableNames', {'PeakG_DeepTecPro_SmallSpace', 'PeakG_DeepTecPro_LargeSpace'}), ...
          table(fsOK, 'VariableNames', {'FailSafeOK'})];
     writetable(T, fullfile(outDir, [tag '_conditions.csv']));
     TA = [table(crash.angleSweep(:), 'VariableNames', {'Angle_deg'}), ...
           array2table(pkA', 'VariableNames', strcat('PeakG_', vn)), ...
-          array2table(bestA', 'VariableNames', {'Best_Small', 'Best_Large'})];
+          array2table(bestA', 'VariableNames', {'Best_Small', 'Best_Large'}), ...
+          array2table(deepA', 'VariableNames', {'DeepTecPro_Small', 'DeepTecPro_Large'})];
     writetable(TA, fullfile(outDir, [tag '_angle_sweep.csv']));
     fprintf('\nFigures and CSV tables saved in %s\n', outDir);
 

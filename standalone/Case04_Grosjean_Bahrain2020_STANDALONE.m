@@ -70,9 +70,10 @@ function [P2, vImpact] = applyConditions(P, cond, crash)
     vImpact = sqrt(max(vb^2 - ratio*(vb^2 - vr^2), 0));
 end
 
-function b = barrierModel(type, foamScale)
+function b = barrierModel(type, foamScale, depth)
 %BARRIERMODEL  Crush behaviour of a trackside barrier.
 %   b = barrierModel(type)            type: 'concrete','armco','tyre','tecpro'
+%   b = barrierModel(type, foamScale, depth): depth = TecPro stack depth
 %   b = barrierModel(type, foamScale) scales the force of deformable
 %                                     barriers (temperature effect, see
 %                                     applyConditions.m). Default 1.
@@ -85,7 +86,8 @@ function b = barrierModel(type, foamScale)
 %   and MUST be calibrated against recorded crashes (Grosjean 2020 for
 %   Armco, Schumacher 1999 / Barrichello 1994 for tyres).
 
-    if nargin < 2, foamScale = 1; end
+    if nargin < 2 || isempty(foamScale), foamScale = 1; end
+    if nargin < 3 || isempty(depth), depth = 1.0; end   % TecPro stack depth [m]
 
     switch lower(type)
         case 'concrete'
@@ -98,8 +100,10 @@ function b = barrierModel(type, foamScale)
             b.name = 'Tyre barrier';
             b.d = [0  0.02  0.70];  b.F = [0  40e3   300e3];  b.kEnd = 5e8;
         case 'tecpro'
-            b.name = 'TecPro barrier';
-            b.d = [0  0.02  1.00];  b.F = [0  60e3   360e3];  b.kEnd = 5e8;
+            % More rows of the same blocks in series: same forces, crush
+            % depths scaled with the stack depth (deep TecPro reference).
+            b.name = sprintf('TecPro barrier (%.2f m)', depth);
+            b.d = [0  0.02  1.00]*depth;  b.F = [0  60e3   360e3];  b.kEnd = 5e8;
         otherwise
             error('barrierModel: unknown type "%s"', type);
     end
@@ -192,7 +196,7 @@ end
 
 function car = carModel(era)
 %CARMODEL  Mass and front crush behaviour of an F1 car of a given era.
-%   car = carModel('2020s'), carModel('2000s') or carModel('1994')
+%   car = carModel(era), era = '2020s' | '2000s' | '1994' | 'cart1990s' | '1973' | 'stockcar'
 %
 %   The crush curve is piecewise linear: force car.F(i) is reached at
 %   crush depth car.d(i). Beyond the last point the survival cell is
@@ -229,6 +233,33 @@ function car = carModel(era)
             car.massNote = '~600 kg minimum incl. driver (estimate for the era)';
             car.d = [0     0.10   0.40];
             car.F = [0     260e3  360e3];
+            car.kEnd = 1e7;
+
+        case 'cart1990s'
+            % CART / IRL single-seaters, 1996-1999 (Reynard, Lola chassis).
+            car.name = 'CART/IRL car, late 1990s';
+            car.mass = 800;                     % ~700 kg car (Lola B99/00) + driver + fuel
+            car.massNote = '~700 kg car + ~75 kg driver + fuel (estimate)';
+            car.d = [0     0.10   0.45];
+            car.F = [0     280e3  380e3];
+            car.kEnd = 1e7;
+
+        case '1973'
+            % Early-1970s F1 car: aluminium monocoque, almost no crush structure.
+            car.name = '1973 F1 car';
+            car.mass = 650;                     % ~575 kg car + driver + fuel (estimate)
+            car.massNote = '~575 kg car + ~70 kg driver + fuel (estimate)';
+            car.d = [0     0.05   0.25];
+            car.F = [0     150e3  220e3];
+            car.kEnd = 1e7;
+
+        case 'stockcar'
+            % 2001 NASCAR Cup car: heavy, long steel front structure.
+            car.name = '2001 NASCAR Cup car';
+            car.mass = 1600;                    % ~1,540 kg car + driver (estimate)
+            car.massNote = '~1,540 kg car + ~70 kg driver (estimate)';
+            car.d = [0     0.15   0.60];
+            car.F = [0     350e3  550e3];
             car.kEnd = 1e7;
 
         otherwise
@@ -424,6 +455,11 @@ function out = runCaseStudy(crash, outDir)
         P.S_large, info.bestLarge_g, M.large.clip3);
     fprintf('Fail-safe check (Case 3 offline): %.1f g vs TecPro %.1f g -> %s\n', ...
         M.failsafe.clip3, M.tecpro.clip3, string(info.failsafeOK));
+    fprintf('\nSame space, passive TecPro only (deeper stack, no hydraulics):\n');
+    fprintf('   %.1f m TecPro: %.1f g   vs Case 3 (same space): %.1f g\n', ...
+        1 + P.S, M.deepSmall.clip3, M.small.clip3);
+    fprintf('   %.1f m TecPro: %.1f g   vs Case 4 (same space): %.1f g\n', ...
+        1 + P.S_large, M.deepLarge.clip3, M.large.clip3);
 
     % --- Figure 1: the real day ---------------------------------------
     f1 = figure('Name', sprintf('%s — real day', crash.shortName), 'Color', 'w', ...
@@ -455,7 +491,9 @@ function out = runCaseStudy(crash, outDir)
         yline(crash.recordedG, '--', sprintf('Recorded %.0f g', crash.recordedG), ...
             'LabelHorizontalAlignment', 'left');
     end
-    title('Peak g  (black line = theoretical best)');
+    plot(3, M.deepSmall.clip3, 'kd', 'MarkerFaceColor', 'w', 'MarkerSize', 8);
+    plot(4, M.deepLarge.clip3, 'kd', 'MarkerFaceColor', 'w', 'MarkerSize', 8);
+    title('Peak g  (line = theoretical best, diamond = deep TecPro, same space)');
 
     nexttile; hold on; grid on; box on;
     reb = cellfun(@(s) M.(s).rebound, keys);
@@ -470,11 +508,12 @@ function out = runCaseStudy(crash, outDir)
     %% ---------------- 2. ANGLE SWEEP ------------------------------------
     fprintf('\nRunning angle sweep (%d angles)...\n', numel(crash.angleSweep));
     nA = numel(crash.angleSweep);
-    pkA = zeros(nS, nA);  bestA = zeros(2, nA);
+    pkA = zeros(nS, nA);  bestA = zeros(2, nA);  deepA = zeros(2, nA);
     for i = 1:nA
         [~, Mi, Ii] = runScenarios(crash, car, dayCond, crash.angleSweep(i), P);
         for k = 1:nS, pkA(k,i) = Mi.(keys{k}).clip3; end
         bestA(:,i) = [Ii.bestSmall_g; Ii.bestLarge_g];
+        deepA(:,i) = [Mi.deepSmall.clip3; Mi.deepLarge.clip3];
     end
     f2 = figure('Name', sprintf('%s — angle sweep', crash.shortName), 'Color', 'w', ...
         'Position', [70 70 1000 580]);
@@ -485,13 +524,16 @@ function out = runCaseStudy(crash, outDir)
     end
     plot(crash.angleSweep, bestA(1,:), ':', 'Color', cols(3,:), 'LineWidth', 1.5);
     plot(crash.angleSweep, bestA(2,:), ':', 'Color', cols(4,:), 'LineWidth', 1.5);
+    plot(crash.angleSweep, deepA(1,:), '--', 'Color', cols(3,:), 'LineWidth', 1.2);
+    plot(crash.angleSweep, deepA(2,:), '--', 'Color', cols(4,:), 'LineWidth', 1.2);
     xline(crash.angleNominal, ':', 'Angle used');
     yline(67, '--k', 'Grosjean 2020: 67 g, survived', 'LabelHorizontalAlignment', 'left');
     set(gca, 'YScale', 'log');
     xlabel(sprintf('Impact angle to barrier (deg)  —  %s', crash.angleNote));
     ylabel('Peak deceleration, 3 ms clip (g)');
     title(sprintf('%s: effect of impact angle', crash.shortName));
-    legend([labels, {'Theoretical best, small space', 'Theoretical best, large space'}], ...
+    legend([labels, {'Theoretical best, small space', 'Theoretical best, large space', ...
+        'Deep TecPro, same space as Case 3', 'Deep TecPro, same space as Case 4'}], ...
         'Location', 'northwest');
     exportgraphics(f2, fullfile(outDir, [tag '_angle_sweep.png']), 'Resolution', 200);
 
@@ -499,12 +541,13 @@ function out = runCaseStudy(crash, outDir)
     condKeys = {'dry', 'light_rain', 'heavy_rain', 'cold', 'hot', 'sun_glare', 'night', 'worst'};
     nC = numel(condKeys);
     pkC = zeros(nC, nS);  hicC = pkC;  trC = pkC;  rbC = pkC;  vImp = zeros(nC,1);
-    condNames = cell(nC,1);  fsOK = false(nC,1);
+    condNames = cell(nC,1);  fsOK = false(nC,1);  deepC = zeros(nC, 2);
     fprintf('Running %d external conditions...\n', nC);
     for i = 1:nC
         c = weatherScenario(condKeys{i});
         [~, Mi, Ii] = runScenarios(crash, car, c, crash.angleNominal, P);
         condNames{i} = c.name;  vImp(i) = Ii.vImpact_kmh;  fsOK(i) = Ii.failsafeOK;
+        deepC(i,:) = [Mi.deepSmall.clip3 Mi.deepLarge.clip3];
         for k = 1:nS
             pkC(i,k)  = Mi.(keys{k}).clip3;
             hicC(i,k) = Mi.(keys{k}).HIC15;
@@ -547,11 +590,13 @@ function out = runCaseStudy(crash, outDir)
          array2table(hicC, 'VariableNames', strcat('HIC_',       vn)), ...
          array2table(trC,  'VariableNames', strcat('Travel_m_',  vn)), ...
          array2table(rbC,  'VariableNames', strcat('Rebound_kmh_', vn)), ...
+         array2table(deepC, 'VariableNames', {'PeakG_DeepTecPro_SmallSpace', 'PeakG_DeepTecPro_LargeSpace'}), ...
          table(fsOK, 'VariableNames', {'FailSafeOK'})];
     writetable(T, fullfile(outDir, [tag '_conditions.csv']));
     TA = [table(crash.angleSweep(:), 'VariableNames', {'Angle_deg'}), ...
           array2table(pkA', 'VariableNames', strcat('PeakG_', vn)), ...
-          array2table(bestA', 'VariableNames', {'Best_Small', 'Best_Large'})];
+          array2table(bestA', 'VariableNames', {'Best_Small', 'Best_Large'}), ...
+          array2table(deepA', 'VariableNames', {'DeepTecPro_Small', 'DeepTecPro_Large'})];
     writetable(TA, fullfile(outDir, [tag '_angle_sweep.csv']));
     fprintf('\nFigures and CSV tables saved in %s\n', outDir);
 
@@ -572,6 +617,8 @@ function [R, M, info] = runScenarios(crash, car, cond, angleDeg, P)
 %
 %   Fail-safe check (not a case): Case 3 with the system offline must give
 %   exactly the TecPro result. Returned as R.failsafe / M.failsafe.
+%   Space-matched references (not cases): passive TecPro as deep as the
+%   space of Case 3 (1.2 m, R.deepSmall) and of Case 4 (3.5 m, R.deepLarge).
 %
 %   crash : case data (see cases/*.m)    car : carModel.m
 %   cond  : weatherScenario.m            angleDeg : impact angle [deg]
@@ -592,6 +639,13 @@ function [R, M, info] = runScenarios(crash, car, cond, angleDeg, P)
     R.small    = simulateCrash('smart',   vN, car, Ctec,  Pc);
     R.large    = simulateCrash('smart',   vN, car, Ctec,  Plarge);
     R.failsafe = simulateCrash('smart',   vN, car, Ctec,  Poff);
+
+    % Space-matched passive references: TecPro stacked as deep as the space
+    % each configuration of our system occupies (1.0 m + sled stroke).
+    Cds = buildContact(car, barrierModel('tecpro', cond.foamScale, 1.0 + P.S));
+    Cdl = buildContact(car, barrierModel('tecpro', cond.foamScale, 1.0 + P.S_large));
+    R.deepSmall = simulateCrash('passive', vN, car, Cds, Pc);
+    R.deepLarge = simulateCrash('passive', vN, car, Cdl, Pc);
 
     f = fieldnames(R);
     for k = 1:numel(f), M.(f{k}) = crashMetrics(R.(f{k}), Pc); end
@@ -807,7 +861,7 @@ function S = summarizeStudies(outs, outDir)
     [keys, labels, short, cols] = scenarioLabels();
     id = zeros(n,1);  name = cell(n,1);  rec = nan(n,1);  angU = zeros(n,1);
     eFrac = nan(n,1);  pk = zeros(n,4);  rb = zeros(n,4);  best = zeros(n,2);
-    fs = false(n,1);  vImp = zeros(n,1);  KE = zeros(n,1);
+    fs = false(n,1);  vImp = zeros(n,1);  KE = zeros(n,1);  deep = zeros(n,2);
     for i = 1:n
         o = outs{i};
         id(i) = o.crash.id;  name{i} = o.crash.shortName;
@@ -820,6 +874,7 @@ function S = summarizeStudies(outs, outDir)
         end
         best(i,:) = [o.info.bestSmall_g o.info.bestLarge_g];
         fs(i) = o.info.failsafeOK;
+        deep(i,:) = [o.M.deepSmall.clip3 o.M.deepLarge.clip3];
     end
     vn = matlab.lang.makeValidName(short);
     S = [table(id, name, vImp, angU, KE, rec, eFrac, 'VariableNames', ...
@@ -827,6 +882,7 @@ function S = summarizeStudies(outs, outDir)
              'RecordedG','EnergyFraction'}), ...
          array2table(pk, 'VariableNames', strcat('PeakG_', vn)), ...
          array2table(best, 'VariableNames', {'BestPossible_Small','BestPossible_Large'}), ...
+         array2table(deep, 'VariableNames', {'DeepTecPro_SmallSpace','DeepTecPro_LargeSpace'}), ...
          array2table(rb, 'VariableNames', strcat('Rebound_kmh_', vn)), ...
          table(100*(1 - pk(:,3)./pk(:,2)), 100*(1 - pk(:,4)./pk(:,2)), fs, 'VariableNames', ...
             {'Reduction_Small_pct','Reduction_Large_pct','FailSafeOK'})];
@@ -852,8 +908,11 @@ function S = summarizeStudies(outs, outDir)
     yline(67, '--k', '67 g (Grosjean, survived)', 'LabelHorizontalAlignment', 'left');
     set(gca, 'XTick', 1:n, 'XTickLabel', name, 'YScale', 'log');
     ylabel('Peak deceleration, 3 ms clip (g)');
-    title('All 10 crashes: real barrier vs TecPro vs our system');
-    legend([labels, {'Recorded g (real crash)'}], 'Location', 'northeastoutside');
+    plot((1:n) + 0.09, deep(:,1), 'kd', 'MarkerFaceColor', cols(3,:), 'MarkerSize', 6);
+    plot((1:n) + 0.27, deep(:,2), 'kd', 'MarkerFaceColor', cols(4,:), 'MarkerSize', 6);
+    title(sprintf('All %d crashes: real barrier vs TecPro vs our system (diamonds: deep TecPro, same space)', n));
+    legend([labels, {'Recorded g (real crash)', '67 g reference', 'Deep TecPro, Case 3 space', ...
+        'Deep TecPro, Case 4 space'}], 'Location', 'northeastoutside');
     nexttile;
     b2 = bar(rb, 'grouped'); grid on; box on;
     for k = 1:4, b2(k).FaceColor = cols(k,:); end

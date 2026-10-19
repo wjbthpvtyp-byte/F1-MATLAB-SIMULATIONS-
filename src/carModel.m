@@ -1,6 +1,6 @@
 function car = carModel(era)
 %CARMODEL  Mass and front crush behaviour of an F1 car of a given era.
-%   car = carModel('2020s'), carModel('2000s') or carModel('1994')
+%   car = carModel(era), era = '2020s' | '2000s' | '1994' | 'cart1990s' | '1973' | 'stockcar'
 %
 %   The crush curve is piecewise linear: force car.F(i) is reached at
 %   crush depth car.d(i). Beyond the last point the survival cell is
@@ -37,6 +37,33 @@ function car = carModel(era)
             car.massNote = '~600 kg minimum incl. driver (estimate for the era)';
             car.d = [0     0.10   0.40];
             car.F = [0     260e3  360e3];
+            car.kEnd = 1e7;
+
+        case 'cart1990s'
+            % CART / IRL single-seaters, 1996-1999 (Reynard, Lola chassis).
+            car.name = 'CART/IRL car, late 1990s';
+            car.mass = 800;                     % ~700 kg car (Lola B99/00) + driver + fuel
+            car.massNote = '~700 kg car + ~75 kg driver + fuel (estimate)';
+            car.d = [0     0.10   0.45];
+            car.F = [0     280e3  380e3];
+            car.kEnd = 1e7;
+
+        case '1973'
+            % Early-1970s F1 car: aluminium monocoque, almost no crush structure.
+            car.name = '1973 F1 car';
+            car.mass = 650;                     % ~575 kg car + driver + fuel (estimate)
+            car.massNote = '~575 kg car + ~70 kg driver + fuel (estimate)';
+            car.d = [0     0.05   0.25];
+            car.F = [0     150e3  220e3];
+            car.kEnd = 1e7;
+
+        case 'stockcar'
+            % 2001 NASCAR Cup car: heavy, long steel front structure.
+            car.name = '2001 NASCAR Cup car';
+            car.mass = 1600;                    % ~1,540 kg car + driver (estimate)
+            car.massNote = '~1,540 kg car + ~70 kg driver (estimate)';
+            car.d = [0     0.15   0.60];
+            car.F = [0     350e3  550e3];
             car.kEnd = 1e7;
 
         otherwise

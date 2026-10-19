@@ -29,7 +29,7 @@ for case in sorted(glob.glob(os.path.join(root, 'cases', 'Case*.m'))):
 # ---------------------------------------------------------------------------
 cases = sorted(glob.glob(os.path.join(root, 'cases', 'Case*.m')))
 parts = ["""%% =====================================================================
-%  F1 SMART BARRIER — ALL 10 CASE STUDIES IN ONE FILE (generated)
+%  F1 SMART BARRIER — ALL 15 CASE STUDIES IN ONE FILE (generated)
 %  ---------------------------------------------------------------------
 %  Each crash: Case 1 real barrier | Case 2 TecPro | Case 3 complete system
 %  small space (+20 cm) | Case 4 complete system large space (~2.6 m),
@@ -50,8 +50,22 @@ for case in cases:
     parts.append("\n%% " + title.lstrip('% ').strip() + "\ncrash = struct();\n" + "\n".join(lines) +
                  "\nouts{end+1} = runCaseStudy(crash, fullfile(resultsDir, 'case%02d'));\nclose all;\n" % cid)
 parts.append("\n%% SUMMARY OF ALL CASE STUDIES\nsummarizeStudies(outs, resultsDir);\n")
-with open(os.path.join(root, 'standalone', 'ALL_10_CASES_STANDALONE.m'), 'w') as fh:
+with open(os.path.join(root, 'standalone', 'ALL_15_CASES_STANDALONE.m'), 'w') as fh:
     fh.write("".join(parts) + "\n\n%% =====================================================================\n"
              "%                SIMULATION ENGINE (generated from src/ — do not edit here)\n"
              "%  =====================================================================\n" + engine)
-print('wrote ALL_10_CASES_STANDALONE.m')
+print('wrote ALL_15_CASES_STANDALONE.m')
+
+
+# ---------------------------------------------------------------------------
+# Breakpoint study as one file
+# ---------------------------------------------------------------------------
+bp = open(os.path.join(root, 'breakpoint', 'BreakpointStudy.m')).read()
+bp = bp.replace("here = fileparts(mfilename('fullpath'));\naddpath(fullfile(here, '..', 'src'));\noutDir = fullfile(here, '..', 'results', 'breakpoint');",
+                "% STANDALONE: the whole simulation engine is included at the bottom of this file.\noutDir = fullfile(pwd, 'results_breakpoint');")
+assert "addpath" not in bp
+with open(os.path.join(root, 'standalone', 'BreakpointStudy_STANDALONE.m'), 'w') as fh:
+    fh.write(bp.rstrip() + "\n\n\n%% =====================================================================\n"
+             "%                SIMULATION ENGINE (generated from src/ — do not edit here)\n"
+             "%  =====================================================================\n" + engine)
+print('wrote BreakpointStudy_STANDALONE.m')

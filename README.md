@@ -56,7 +56,7 @@ for each space) are reported alongside every case, together with rebound speed.
 sun glare, worst case) and across a range of impact angles when the angle
 was not published.
 
-## The 10 crashes
+## The 15 crashes
 | # | Crash | Real barrier | Fatal | Recorded g | Script |
 |---|-------|--------------|-------|-----------|--------|
 | 1 | Ayrton Senna, Imola 1994 | Concrete | Yes | — | `Case01_Senna_Imola1994.m` |
@@ -69,9 +69,31 @@ was not published.
 | 8 | Mick Schumacher, Jeddah 2022 | Concrete | No | 33 | `Case08_MSchumacher_Jeddah2022.m` |
 | 9 | Michael Schumacher, Silverstone 1999 | Tyres | No | — | `Case09_Schumacher_Silverstone1999.m` |
 | 10 | Fernando Alonso, Melbourne 2016 | Concrete | No | 45 (lateral) | `Case10_Alonso_Melbourne2016.m` |
+| 11 | Greg Moore, California Speedway 1999 (CART) | Concrete | Yes | 154 | `Case11_Moore_Fontana1999.m` |
+| 12 | Scott Brayton, Indianapolis 1996 | Concrete | Yes | — | `Case12_Brayton_Indianapolis1996.m` |
+| 13 | François Cevert, Watkins Glen 1973 | Armco | Yes | — | `Case13_Cevert_WatkinsGlen1973.m` |
+| 14 | Gonzalo Rodríguez, Laguna Seca 1999 (CART) | Tyres on concrete | Yes | 150 (press) | `Case14_Rodriguez_LagunaSeca1999.m` |
+| 15 | Dale Earnhardt, Daytona 2001 (NASCAR) | Concrete | Yes | 48–68 (sled tests) | `Case15_Earnhardt_Daytona2001.m` |
 
-Run all ten and build the summary table/figure with `run('runAllCases.m')`
-(or `standalone/ALL_10_CASES_STANDALONE.m` in MATLAB Online).
+Cases 11–15 are fatal barrier impacts from before TecPro was homologated
+(2006). No fatal impact into a TecPro barrier was found in the sources searched.
+
+Run all fifteen and build the summary with `run('runAllCases.m')`
+(or `standalone/ALL_15_CASES_STANDALONE.m` in MATLAB Online).
+
+## Breakpoint study (hypothetical)
+`breakpoint/BreakpointStudy.m`: 15 HYPOTHETICAL impacts (150–350 km/h ×
+20°/45°/90°, 798 kg car) and the impact energy at which each configuration
+first exceeds 40 g and 67 g, including passive TecPro stacked as deep as the
+space each version of the system uses (1.2 m and 3.5 m).
+
+## Tentative design
+`docs/design_concept.md` — concept layout of the TecPro module on a
+hydraulic sled in front of the existing guardrail.
+
+## Finite element analysis
+`fea/F1_Sled_Plate_FEA.m` — sled deck under the 600 kN design load
+(see `docs/fea_notes.md`).
 
 ### Calibration to recorded g (Equivalent Barrier Speed)
 Real cars glance off, spin, lose wheels and push barriers back, so the

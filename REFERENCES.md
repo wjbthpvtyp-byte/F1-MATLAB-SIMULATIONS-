@@ -28,6 +28,15 @@ one number.
 | S17 | Formula1.com, *A racer through and through — Ratzenberger remembered* (2014) — https://www.formula1.com/en/latest/features/2014/4/A-racer-through-and-through---Ratzenberger-remembered.html | Ratzenberger: >300 km/h, front wing failure after Acque Minerali off |
 | S18 | Wikipedia, *Dallara F2 2018* — https://en.wikipedia.org/wiki/Dallara_F2_2018 | F2 car: 720 kg incl. driver and fuel |
 | S19 | GPFans, *F1 car weight explained* — https://www.gpfans.com/en/f1-news/1028252/f1-car-weight-explained/ ; F1Technical, *F1MATHS: weight limit evolution* — https://www.f1technical.net/news/28346 | Minimum weights: 2007 605 kg, 2015–16 702 kg, 2020 746 kg, 2022 798 kg (incl. driver, excl. fuel) |
+| S20 | Wikipedia, *Greg Moore (racing driver)* — https://en.wikipedia.org/wiki/Greg_Moore_(racing_driver) | >350 km/h, airborne, concrete at 90°, 154 g, fatal |
+| S21 | Wikipedia, *Scott Brayton* — https://en.wikipedia.org/wiki/Scott_Brayton | >370 km/h into outside wall, basilar skull fracture |
+| S22 | Wikipedia, *François Cevert* — https://en.wikipedia.org/wiki/Fran%C3%A7ois_Cevert | ~241 km/h (Stewart), guardrail near 90°, fatal |
+| S23 | Wikipedia, *Gonzalo Rodríguez (racing driver)* — https://en.wikipedia.org/wiki/Gonzalo_Rodr%C3%ADguez_(racing_driver) | Tyre barrier + concrete wall, thin tyres, basilar skull fracture |
+| S24 | SpeedCenter, *Laguna Seca 1999 wrap-up* — https://speedcenter.com/archive/races99/17laguna/wrapup.html | Rodríguez impact "in excess of 150 g's" |
+| S25 | Motorsport.com, *Gonzalo Rodriguez dies in crash at Laguna Seca* — https://us.motorsport.com/indycar/news/champcar-cart-gonzalo-rodriguez-dies-in-crash-at-laguna-seca/1770406/ | Concrete barrier protected by tyre wall, massive head and neck injuries |
+| S26 | Wikipedia, *Death of Dale Earnhardt* — https://en.wikipedia.org/wiki/Death_of_Dale_Earnhardt | 253–259 km/h, 13.6° trajectory, Δv 68–71 km/h, 48–68 g sled tests |
+| S27 | Wikipedia, *Lola B99/00* — https://en.wikipedia.org/wiki/Lola_B99/00 | CART car 700 kg |
+| S28 | Wikipedia, *Tecpro barrier* — https://en.wikipedia.org/wiki/Tecpro_barrier | TecPro homologated 2006; no fatal TecPro impact recorded there |
 
 ## Note for the paper
 Wikipedia pages are used here to locate primary sources. For the final paper,

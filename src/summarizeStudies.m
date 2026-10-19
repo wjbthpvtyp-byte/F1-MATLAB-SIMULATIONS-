@@ -7,7 +7,7 @@ function S = summarizeStudies(outs, outDir)
     [keys, labels, short, cols] = scenarioLabels();
     id = zeros(n,1);  name = cell(n,1);  rec = nan(n,1);  angU = zeros(n,1);
     eFrac = nan(n,1);  pk = zeros(n,4);  rb = zeros(n,4);  best = zeros(n,2);
-    fs = false(n,1);  vImp = zeros(n,1);  KE = zeros(n,1);
+    fs = false(n,1);  vImp = zeros(n,1);  KE = zeros(n,1);  deep = zeros(n,2);
     for i = 1:n
         o = outs{i};
         id(i) = o.crash.id;  name{i} = o.crash.shortName;
@@ -20,6 +20,7 @@ function S = summarizeStudies(outs, outDir)
         end
         best(i,:) = [o.info.bestSmall_g o.info.bestLarge_g];
         fs(i) = o.info.failsafeOK;
+        deep(i,:) = [o.M.deepSmall.clip3 o.M.deepLarge.clip3];
     end
     vn = matlab.lang.makeValidName(short);
     S = [table(id, name, vImp, angU, KE, rec, eFrac, 'VariableNames', ...
@@ -27,6 +28,7 @@ function S = summarizeStudies(outs, outDir)
              'RecordedG','EnergyFraction'}), ...
          array2table(pk, 'VariableNames', strcat('PeakG_', vn)), ...
          array2table(best, 'VariableNames', {'BestPossible_Small','BestPossible_Large'}), ...
+         array2table(deep, 'VariableNames', {'DeepTecPro_SmallSpace','DeepTecPro_LargeSpace'}), ...
          array2table(rb, 'VariableNames', strcat('Rebound_kmh_', vn)), ...
          table(100*(1 - pk(:,3)./pk(:,2)), 100*(1 - pk(:,4)./pk(:,2)), fs, 'VariableNames', ...
             {'Reduction_Small_pct','Reduction_Large_pct','FailSafeOK'})];
@@ -52,8 +54,11 @@ function S = summarizeStudies(outs, outDir)
     yline(67, '--k', '67 g (Grosjean, survived)', 'LabelHorizontalAlignment', 'left');
     set(gca, 'XTick', 1:n, 'XTickLabel', name, 'YScale', 'log');
     ylabel('Peak deceleration, 3 ms clip (g)');
-    title('All 10 crashes: real barrier vs TecPro vs our system');
-    legend([labels, {'Recorded g (real crash)'}], 'Location', 'northeastoutside');
+    plot((1:n) + 0.09, deep(:,1), 'kd', 'MarkerFaceColor', cols(3,:), 'MarkerSize', 6);
+    plot((1:n) + 0.27, deep(:,2), 'kd', 'MarkerFaceColor', cols(4,:), 'MarkerSize', 6);
+    title(sprintf('All %d crashes: real barrier vs TecPro vs our system (diamonds: deep TecPro, same space)', n));
+    legend([labels, {'Recorded g (real crash)', '67 g reference', 'Deep TecPro, Case 3 space', ...
+        'Deep TecPro, Case 4 space'}], 'Location', 'northeastoutside');
     nexttile;
     b2 = bar(rb, 'grouped'); grid on; box on;
     for k = 1:4, b2(k).FaceColor = cols(k,:); end

@@ -10,6 +10,8 @@ function [R, M, info] = runScenarios(crash, car, cond, angleDeg, P)
 %
 %   Fail-safe check (not a case): Case 3 with the system offline must give
 %   exactly the TecPro result. Returned as R.failsafe / M.failsafe.
+%   Space-matched references (not cases): passive TecPro as deep as the
+%   space of Case 3 (1.2 m, R.deepSmall) and of Case 4 (3.5 m, R.deepLarge).
 %
 %   crash : case data (see cases/*.m)    car : carModel.m
 %   cond  : weatherScenario.m            angleDeg : impact angle [deg]
@@ -30,6 +32,13 @@ function [R, M, info] = runScenarios(crash, car, cond, angleDeg, P)
     R.small    = simulateCrash('smart',   vN, car, Ctec,  Pc);
     R.large    = simulateCrash('smart',   vN, car, Ctec,  Plarge);
     R.failsafe = simulateCrash('smart',   vN, car, Ctec,  Poff);
+
+    % Space-matched passive references: TecPro stacked as deep as the space
+    % each configuration of our system occupies (1.0 m + sled stroke).
+    Cds = buildContact(car, barrierModel('tecpro', cond.foamScale, 1.0 + P.S));
+    Cdl = buildContact(car, barrierModel('tecpro', cond.foamScale, 1.0 + P.S_large));
+    R.deepSmall = simulateCrash('passive', vN, car, Cds, Pc);
+    R.deepLarge = simulateCrash('passive', vN, car, Cdl, Pc);
 
     f = fieldnames(R);
     for k = 1:numel(f), M.(f{k}) = crashMetrics(R.(f{k}), Pc); end
