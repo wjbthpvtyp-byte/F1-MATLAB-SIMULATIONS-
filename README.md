@@ -1,7 +1,8 @@
 # F1 Smart Barrier — Crash Simulation Study
 
 MATLAB simulations of a camera-controlled hydraulic barrier for Formula 1
-circuits, tested against 10 real crashes (3 of them fatal).
+circuits, tested against 15 documented crashes (8 of them fatal) and 15
+hypothetical breakpoint impacts.
 
 ## Design principles
 1. **The standard TecPro barrier is not changed.** Same blocks, same depth.
@@ -19,12 +20,16 @@ circuits, tested against 10 real crashes (3 of them fatal).
 
 ## Repository layout
 ```
-src/       Shared simulation engine (used by every case)
-cases/     One script per real crash (Case01 ... Case10)
-data/      crash_database.csv - the 10 crashes with source IDs
-docs/      external_factors.md - weather/temperature effects
-legacy/    Earlier concept scripts (v1 long-stroke, v2 smart barrier)
-results/   Figures and CSV tables written by the case scripts
+src/        Shared simulation engine (used by every case)
+cases/      One script per real crash (Case01 ... Case15)
+breakpoint/ BreakpointStudy.m - 15 hypothetical impacts and breakpoints
+fea/        Finite element analysis of the sled deck
+data/       crash_database.csv - the 15 crashes with source IDs
+docs/       design concept, FEA notes, external factors, NHSJS references
+standalone/ Single-file versions for MATLAB Online
+tools/      Python reference implementation used to cross-check MATLAB
+legacy/     Earlier concept scripts (v1 long-stroke, v2 smart barrier)
+results/    Figures and CSV tables written by the case scripts
 REFERENCES.md  All sources (S1, S2, ...) for the paper
 ```
 
@@ -52,19 +57,20 @@ A **fail-safe check** (Case 3 with the system offline must equal TecPro) and
 the **theoretical best** (lowest g physically possible with TecPro unchanged,
 for each space) are reported alongside every case, together with rebound speed.
 
-…under seven external conditions (dry, light rain, heavy rain, cold, hot,
-sun glare, worst case) and across a range of impact angles when the angle
-was not published.
+Every crash is also run under eight external conditions (dry, light rain,
+heavy rain, cold, hot, sun glare, night, worst case), across a range of impact
+angles, and against passive TecPro stacked as deep as the space each version
+of the system uses (1.2 m and 3.5 m).
 
 ## The 15 crashes
 | # | Crash | Real barrier | Fatal | Recorded g | Script |
 |---|-------|--------------|-------|-----------|--------|
 | 1 | Ayrton Senna, Imola 1994 | Concrete | Yes | — | `Case01_Senna_Imola1994.m` |
 | 2 | Roland Ratzenberger, Imola 1994 | Concrete | Yes | (500, unverified) | `Case02_Ratzenberger_Imola1994.m` |
-| 3 | Anthoine Hubert, Spa 2019 (F2) | Tyres (assumed) | Yes | 33.7 | `Case03_Hubert_Spa2019.m` |
-| 4 | Romain Grosjean, Bahrain 2020 | Armco | No | 67 | `Case04_Grosjean_Bahrain2020.m` |
+| 3 | Anthoine Hubert, Spa 2019 (F2) | Barrier, type not stated (tyres assumed) | Yes | 33.7 | `Case03_Hubert_Spa2019.m` |
+| 4 | Romain Grosjean, Bahrain 2020 | Triple guardrail | No | 67 | `Case04_Grosjean_Bahrain2020.m` |
 | 5 | Robert Kubica, Canada 2007 | Concrete | No | 75 | `Case05_Kubica_Canada2007.m` |
-| 6 | Carlos Sainz, Sochi 2015 | TecPro | No | 46 | `Case06_Sainz_Sochi2015.m` |
+| 6 | Carlos Sainz, Sochi 2015 | TecPro | No | 42 (FIA ADR) | `Case06_Sainz_Sochi2015.m` |
 | 7 | Rubens Barrichello, Imola 1994 | Tyres | No | 95 | `Case07_Barrichello_Imola1994.m` |
 | 8 | Mick Schumacher, Jeddah 2022 | Concrete | No | 33 | `Case08_MSchumacher_Jeddah2022.m` |
 | 9 | Michael Schumacher, Silverstone 1999 | Tyres | No | — | `Case09_Schumacher_Silverstone1999.m` |
@@ -73,10 +79,10 @@ was not published.
 | 12 | Scott Brayton, Indianapolis 1996 | Concrete | Yes | — | `Case12_Brayton_Indianapolis1996.m` |
 | 13 | François Cevert, Watkins Glen 1973 | Armco | Yes | — | `Case13_Cevert_WatkinsGlen1973.m` |
 | 14 | Gonzalo Rodríguez, Laguna Seca 1999 (CART) | Tyres on concrete | Yes | 150 (press) | `Case14_Rodriguez_LagunaSeca1999.m` |
-| 15 | Dale Earnhardt, Daytona 2001 (NASCAR) | Concrete | Yes | 48–68 (sled tests) | `Case15_Earnhardt_Daytona2001.m` |
+| 15 | Dale Earnhardt, Daytona 2001 (NASCAR) | Concrete | Yes | 48–68 (sled tests; 58 used) | `Case15_Earnhardt_Daytona2001.m` |
 
-Cases 11–15 are fatal barrier impacts from before TecPro was homologated
-(2006). No fatal impact into a TecPro barrier was found in the sources searched.
+Cases 11–15 are fatal barrier impacts from before TecPro was introduced
+(developed with the FIA Institute in 2006). No fatal impact into a TecPro barrier was found in the sources searched.
 
 Run all fifteen and build the summary with `run('runAllCases.m')`
 (or `standalone/ALL_15_CASES_STANDALONE.m` in MATLAB Online).
@@ -101,7 +107,7 @@ barrier absorbs less than the full geometric impact energy. For every crash
 with a recorded peak g, the impact angle is adjusted until the REAL barrier
 in the model reproduces the recorded g (`src/calibrateAngle.m`). TecPro and
 our system are then tested at that same, measured severity.
-Check: for Grosjean the calibration needs ~29.6°; the FIA report gives 29°.
+Check: for Grosjean the calibration needs 29.5°; the FIA report gives 29°.
 
 ## Model and limitations
 - 1-D impulse–momentum model, fixed-step semi-implicit Euler (10 µs step).
