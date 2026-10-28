@@ -32,4 +32,4 @@ if __name__=="__main__":
         for n in names:
             vn=bp(n,G); res[(n,G)]=vn
             print('breakpoint %2d g %-7s vn %5.1f m/s  KE %6.0f kJ'%(G,n,vn,0.5*798*vn**2/1e3))
-    json.dump(dict(grid=grid,bp={f'{n}_{G}':v for (n,G),v in res.items()}),open('breakpoint.json','w'))
+    json.dump(dict(grid=grid,bp={f'{n}_{G}':v for (n,G),v in res.items()}),open(__import__('os').path.join(__import__('os').path.dirname(__import__('os').path.abspath(__file__)),'..','results','breakpoint.json'),'w'))

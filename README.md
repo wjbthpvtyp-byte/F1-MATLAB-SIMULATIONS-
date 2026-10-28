@@ -27,9 +27,14 @@ fea/        Finite element analysis of the sled deck
 data/       crash_database.csv - the 15 crashes with source IDs
 docs/       design concept, FEA notes, external factors, NHSJS references
 standalone/ Single-file versions for MATLAB Online
-tools/      Python reference implementation used to cross-check MATLAB
+tools/      Python reference implementation of the same model, plus the
+            scripts that compute every number in the paper
+paper_figures/  The paper's three figures, the scripts that draw them and
+            their data (paper_figures/data/)
 legacy/     Earlier concept scripts (v1 long-stroke, v2 smart barrier)
-results/    Figures and CSV tables written by the case scripts
+results/    JSON outputs of the Python scripts (paper_numbers, hic_realday,
+            angle_sweeps, breakpoint, spacematch);
+            the MATLAB case scripts write their figures and CSVs here too
 REFERENCES.md  All sources (S1, S2, ...) for the paper
 ```
 
@@ -44,6 +49,29 @@ to `results/caseXX/`.
 **MATLAB Online / single file:** every case also exists as one self-contained
 file in `standalone/` (case + whole engine). Regenerate them after changing
 `src/` with `python3 tools/build_standalone.py`.
+
+## Reproducing the paper (Python)
+The numbers, tables and figures in the paper were computed with the Python
+reference implementation in `tools/`, which follows the MATLAB pipeline step
+by step (calibrate the impact angle under the real-day condition, then run
+every scenario). It needs Python 3 with NumPy and Matplotlib. Run from the
+repository folder:
+
+| Step | Command | What it produces | Time |
+|------|---------|------------------|------|
+| 1 | `python3 tools/verify_paper_numbers.py` | `results/paper_numbers.json`: all 15 crashes × 8 conditions + real day | ~30 s |
+| 2 | `python3 tools/paper_stats.py` | Prints Tables 1–4, medians, ranges, rebound and fail-safe checks | seconds |
+| 3 | `python3 tools/paper_hic.py` | `results/hic_realday.json`: HIC15 for every crash | seconds |
+| 4 | `python3 tools/paper_sweep.py` | `results/angle_sweeps.json`: sensitivity to impact angle | ~40 s |
+| 5 | `python3 tools/paper_mass_sens2.py` | Sled-mass sensitivity (100 / 250 / 400 kg) | seconds |
+| 6 | `python3 tools/paper_timestep_check.py` | Time-step check (20 / 10 / 5 µs; max change 0.10 %) | seconds |
+| 7 | `python3 tools/paper_figure_data.py` | `paper_figures/data/*.json` | ~15 s |
+| 8 | `python3 paper_figures/make_figs.py` and `python3 paper_figures/make_mechanism_figure.py` | The three figures | seconds |
+
+Steps 2–7 read the output of step 1. The breakpoint study and the
+space-matched TecPro comparison have their own Python versions in
+`tools/breakpoint.py` and `tools/spacematch.py` (they write `results/breakpoint.json` and `results/spacematch.json`); the FEA cross-check is
+`tools/python_reference_fea.py`.
 
 ## Every crash is simulated in four cases
 1. **Real condition** – the barrier that was actually there that day

@@ -8,7 +8,7 @@ for c in ALL:
     for w in conds:
         _,vn,r=runall(c,w,ang)
         rows.append((c[0],c[1],w,ang,vn,*[r[k]['clip'] for k in ['real','tecpro','deep12','small','deep35','large']],r['tecpro']['reb'],r['deep35']['reb'],r['small']['reb'],r['large']['reb']))
-import json; json.dump(rows,open('spacematch.json','w'))
+import json; json.dump(rows,open(__import__('os').path.join(__import__('os').path.dirname(__import__('os').path.abspath(__file__)),'..','results','spacematch.json'),'w'))
 day={1:'dry',4:'night',8:'night'}
 print('REAL DAY')
 for r in rows:
