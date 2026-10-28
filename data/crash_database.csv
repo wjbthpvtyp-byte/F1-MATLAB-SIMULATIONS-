@@ -1,0 +1,16 @@
+id,driver,event,date,series,barrier_type,impact_speed_kmh,speed_before_kmh,impact_angle_deg,peak_g,outcome,fatal,data_quality,sources
+1,Ayrton Senna,San Marino GP Imola (Tamburello),1994-05-01,F1,concrete,211,309,unknown (shallow),not recorded,Fatal head injuries (wheel/suspension struck helmet),yes,speed documented; angle and g not published,S1;S2;S3;S4
+2,Roland Ratzenberger,San Marino GP Imola qualifying (Villeneuve),1994-04-30,F1,concrete,314,308 (when wing failed),unknown (almost head-on then slid along wall),500 (newspaper report; unverified),Fatal (basilar skull fracture),yes,speed documented; g unverified,S2;S4;S5;S16;S17
+3,Anthoine Hubert,Belgian GP F2 Spa (Raidillon exit),2019-08-31,F2,barrier (type not stated),216,262,~40,33.7 (barrier); 81.8 (secondary car-to-car impact at 218 km/h ~86 deg),Fatal (secondary impact after rebound to track),yes,FIA investigation report,S6
+4,Romain Grosjean,Bahrain GP (Turn 3 exit),2020-11-29,F1,armco (triple guardrail),192,241,29,67,Burns to hands,no,FIA investigation report,S7
+5,Robert Kubica,Canadian GP Montreal,2007-06-10,F1,concrete,232,280+,unknown,75 (front) / 28 (rear),Concussion,no,ADR data via press; angle not published,S8;S9
+6,Carlos Sainz,Russian GP Sochi FP3,2015-10-10,F1,tecpro,153,~204 (wall contact),head-on,42 (FIA ADR); 46 (early team report),Unhurt; TecPro rebounded onto car,no,FIA AUTO magazine; press,S10;S11;S29
+7,Rubens Barrichello,San Marino GP Imola practice (Variante Bassa),1994-04-29,F1,tyre,225,,unknown (airborne into top of tyres),95,Knocked unconscious,no,press / oral history,S2
+8,Mick Schumacher,Saudi Arabian GP Jeddah qualifying (T10),2022-03-26,F1,concrete,~270 (driver estimate),,glancing,33,Unhurt; missed race,no,driver estimate for speed,S12
+9,Michael Schumacher,British GP Silverstone (Stowe),1999-07-11,F1,tyre,107,306,near head-on,not published,Broken leg,no,FIA conclusions,S13
+10,Fernando Alonso,Australian GP Melbourne,2016-03-20,F1,concrete wall + gravel roll,~305 (at first car contact),313,unknown,45 lateral (wall) / 46 (roll) / 20 longitudinal,Rib fractures,no,FIA data via press; wall impact speed uncertain,S14
+11,Greg Moore,CART Marlboro 500 California Speedway,1999-10-31,CART,concrete (no tyre wall),>350 (into infield),,90 (after barrel roll),154,Fatal (head and internal injuries),yes,CART data sensor via Wikipedia,S20
+12,Scott Brayton,Indianapolis 500 practice,1996-05-17,IRL,concrete (outside retaining wall),>370,,not published,not published,Fatal (basilar skull fracture),yes,speed from Wikipedia,S21
+13,Francois Cevert,US GP Watkins Glen qualifying,1973-10-06,F1,armco (guardrail),~241 (eyewitness),,near 90,not recorded,Fatal (injuries from guardrail),yes,eyewitness speed,S22
+14,Gonzalo Rodriguez,CART Laguna Seca practice (Corkscrew),1999-09-11,CART,tyre barrier on concrete wall,not published,,front-first,>150 (press),Fatal (basilar skull fracture),yes,g from press; speed not published,S23;S24;S25
+15,Dale Earnhardt,Daytona 500 last lap,2001-02-18,NASCAR,concrete,253-259,,13.6 (trajectory),48-68 (sled tests),Fatal (basilar skull fracture),yes,NASCAR investigation via Wikipedia,S26
